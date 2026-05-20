@@ -32,8 +32,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     // 2. Create the lead
     const { rows: newLead } = await pool.query(
-      \`INSERT INTO leads (customer_id, pic_id, lead_date, source, status) 
-       VALUES ($1, $2, $3, $4, $5) RETURNING *\`,
+      `INSERT INTO leads (customer_id, pic_id, lead_date, source, status) 
+       VALUES ($1, $2, $3, $4, $5) RETURNING *`,
       [customerId, pic_id || 1, date, source, 'New Lead']
     );
     

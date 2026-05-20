@@ -14,8 +14,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
   try {
     const { rows } = await pool.query(
-      \`INSERT INTO customers (name, phone, email, type, address, notes)
-       VALUES ($1, $2, $3, $4, $5, $6) RETURNING *\`,
+      `INSERT INTO customers (name, phone, email, type, address, notes)
+       VALUES ($1, $2, $3, $4, $5, $6) RETURNING *`,
       [name, phone, email, type, address, notes]
     );
     res.status(201).json(rows[0]);

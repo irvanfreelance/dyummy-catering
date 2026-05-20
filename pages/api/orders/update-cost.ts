@@ -14,11 +14,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
   try {
     const { rows } = await pool.query(
-      \`UPDATE orders 
+      `UPDATE orders 
        SET actual_cost = $1, 
            status_cost = $2,
            updated_at = CURRENT_TIMESTAMP
-       WHERE id = $3 RETURNING *\`,
+       WHERE id = $3 RETURNING *`,
       [actual_cost, status_cost, id]
     );
 
