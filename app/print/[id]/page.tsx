@@ -3,7 +3,8 @@ import React, { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
 
 export default function PrintOrderPage() {
-  const { id } = useParams();
+  const params = useParams();
+  const id = params?.id;
   const [order, setOrder] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
