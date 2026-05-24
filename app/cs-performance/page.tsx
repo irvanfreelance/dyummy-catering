@@ -10,32 +10,149 @@ const C = { primary: "#1D9E75", danger: "#E24B4A", warning: "#BA7517", secondary
 const COLORS = [C.primary, C.danger, C.secondary, C.purple, C.warning];
 
 export default function CSPerformancePage() {
-  const [data, setData] = useState<any>({ csData: [], chartData: [] });
+  const todayStr = new Date().toISOString().slice(0, 10);
+  const mtdStr = todayStr.slice(0, 8) + '01';
+  
+  const [data, setData] = useState<any>({ csData: [], chartData: [], dailyStats: {}, recentCustomers: [], recentOrders: [] });
   const [loading, setLoading] = useState(true);
-  const [month, setMonth] = useState(new Date().toISOString().slice(0, 7));
+  const [startDate, setStartDate] = useState(mtdStr);
+  const [endDate, setEndDate] = useState(todayStr);
 
   useEffect(() => {
     setLoading(true);
-    fetch(`/api/cs-performance?month=${month}`)
+    fetch(`/api/cs-performance?startDate=${startDate}&endDate=${endDate}`)
       .then(r => r.json())
       .then(setData)
       .finally(() => setLoading(false));
-  }, [month]);
+  }, [startDate, endDate]);
 
-  const { csData = [], chartData = [] } = data;
+  const { csData = [], chartData = [], dailyStats = {}, recentCustomers = [], recentOrders = [] } = data;
   const best = csData.length ? csData.reduce((a: any, b: any) => a.monthRate > b.monthRate ? a : b) : null;
   const worst = csData.length ? csData.reduce((a: any, b: any) => a.monthRate < b.monthRate ? a : b) : null;
   const avgRate = csData.length ? (csData.reduce((s: number, c: any) => s + c.monthRate, 0) / csData.length).toFixed(1) : "0";
   const totalClosing = csData.reduce((s: number, c: any) => s + c.monthClosing, 0);
 
+  // Helper formatting
+  const formatRupiah = (val: number) => new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(val);
+  const formatDate = (dateStr: string) => new Date(dateStr).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' });
+
   return (
     <div>
       <PageHeader title="Performa CS" subtitle="Closing rate & evaluasi per CS — dari database real"
         actions={
-          <input type="month" value={month} onChange={e => setMonth(e.target.value)}
-            style={{ border: "1px solid #d1d5db", borderRadius: 8, padding: "6px 12px", fontSize: 13 }} />
+          <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+            <span style={{ fontSize: 13, color: '#6b7280' }}>Dari:</span>
+            <input type="date" value={startDate} onChange={e => setStartDate(e.target.value)}
+              style={{ border: "1px solid #d1d5db", borderRadius: 8, padding: "6px 12px", fontSize: 13 }} />
+            <span style={{ fontSize: 13, color: '#6b7280' }}>s.d.</span>
+            <input type="date" value={endDate} onChange={e => setEndDate(e.target.value)}
+              style={{ border: "1px solid #d1d5db", borderRadius: 8, padding: "6px 12px", fontSize: 13 }} />
+          </div>
         }
       />
+
+      {/* --- DASHBOARD RINGKASAN --- */}
+      <div style={{ marginBottom: 32 }}>
+        <h2 style={{ fontSize: 18, fontWeight: 600, marginBottom: 16 }}>Ringkasan Data ({formatDate(startDate)} - {formatDate(endDate)})</h2>
+        
+        {loading ? (
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 16, marginBottom: 24 }}>
+            {[1,2,3,4].map(i => <div key={i} className="skeleton" style={{ height: 100, borderRadius: 12 }} />)}
+          </div>
+        ) : (
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(200px,1fr))", gap: 16, marginBottom: 24 }}>
+            <div style={{ backgroundColor: "#007BFF", color: "white", padding: 20, borderRadius: 8, boxShadow: "0 2px 4px rgba(0,0,0,0.1)" }}>
+              <p style={{ fontSize: 14, opacity: 0.9, marginBottom: 8 }}>Total Leads</p>
+              <h3 style={{ fontSize: 32, fontWeight: 700, margin: 0 }}>{dailyStats.leads || 0}</h3>
+            </div>
+            <div style={{ backgroundColor: "#28A745", color: "white", padding: 20, borderRadius: 8, boxShadow: "0 2px 4px rgba(0,0,0,0.1)" }}>
+              <p style={{ fontSize: 14, opacity: 0.9, marginBottom: 8 }}>Total Orders baru</p>
+              <h3 style={{ fontSize: 32, fontWeight: 700, margin: 0 }}>{dailyStats.orders || 0}</h3>
+            </div>
+            <div style={{ backgroundColor: "#17A2B8", color: "white", padding: 20, borderRadius: 8, boxShadow: "0 2px 4px rgba(0,0,0,0.1)" }}>
+              <p style={{ fontSize: 14, opacity: 0.9, marginBottom: 8 }}>Closing Rate<br/><span style={{ fontSize: 12 }}>customer baru</span></p>
+              <h3 style={{ fontSize: 32, fontWeight: 700, margin: 0 }}>{dailyStats.closingRate || 0}%</h3>
+            </div>
+            <div style={{ backgroundColor: "#FFC107", color: "white", padding: 20, borderRadius: 8, boxShadow: "0 2px 4px rgba(0,0,0,0.1)" }}>
+              <p style={{ fontSize: 14, opacity: 0.9, marginBottom: 8 }}>Revenue<br/><span style={{ fontSize: 12 }}>(baru+repeat)</span></p>
+              <h3 style={{ fontSize: 24, fontWeight: 700, margin: 0, marginTop: 8 }}>{formatRupiah(dailyStats.revenue || 0)}</h3>
+            </div>
+          </div>
+        )}
+
+        <div style={{ display: "grid", gridTemplateColumns: "1fr", gap: 24 }}>
+          {/* Recent Customers Table */}
+          <div className="erp-card" style={{ padding: 0, overflow: "hidden" }}>
+            <div style={{ padding: "16px 20px", borderBottom: "1px solid #f3f4f6", backgroundColor: "#fff" }}>
+              <h3 style={{ fontSize: 14, fontWeight: 700, color: "#007BFF", margin: 0 }}>Recent Customers</h3>
+            </div>
+            <div style={{ padding: "0 20px 20px" }}>
+              <table style={{ marginTop: 16 }}>
+                <thead>
+                  <tr style={{ backgroundColor: "#f1f5f9" }}>
+                    <th style={{ width: 50, padding: "10px 16px" }}>#</th>
+                    <th style={{ padding: "10px 16px" }}>Nama</th>
+                    <th style={{ padding: "10px 16px" }}>No. WA</th>
+                    <th style={{ padding: "10px 16px" }}>Total Order</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {recentCustomers.length > 0 ? (
+                    recentCustomers.map((c: any, i: number) => (
+                      <tr key={c.id}>
+                        <td style={{ padding: "10px 16px" }}>{i + 1}</td>
+                        <td style={{ padding: "10px 16px", fontWeight: 500 }}>{c.name}</td>
+                        <td style={{ padding: "10px 16px" }}>{c.phone || "-"}</td>
+                        <td style={{ padding: "10px 16px" }}>{c.total_order}</td>
+                      </tr>
+                    ))
+                  ) : (
+                    <tr><td colSpan={4} style={{ textAlign: "center", padding: "20px" }}>Belum ada data</td></tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          {/* Recent Orders Table */}
+          <div className="erp-card" style={{ padding: 0, overflow: "hidden" }}>
+            <div style={{ padding: "16px 20px", borderBottom: "1px solid #f3f4f6", backgroundColor: "#fff" }}>
+              <h3 style={{ fontSize: 14, fontWeight: 700, color: "#007BFF", margin: 0 }}>Recent Orders</h3>
+            </div>
+            <div style={{ padding: "0 20px 20px" }}>
+              <table style={{ marginTop: 16 }}>
+                <thead>
+                  <tr style={{ backgroundColor: "#f1f5f9" }}>
+                    <th style={{ width: 50, padding: "10px 16px" }}>#</th>
+                    <th style={{ padding: "10px 16px" }}>Customer</th>
+                    <th style={{ padding: "10px 16px" }}>Porsi</th>
+                    <th style={{ padding: "10px 16px" }}>Harga</th>
+                    <th style={{ padding: "10px 16px" }}>Tanggal kirim</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {recentOrders.length > 0 ? (
+                    recentOrders.map((o: any, i: number) => (
+                      <tr key={o.id}>
+                        <td style={{ padding: "10px 16px" }}>{i + 1}</td>
+                        <td style={{ padding: "10px 16px", fontWeight: 500 }}>{o.customer}</td>
+                        <td style={{ padding: "10px 16px" }}>{o.porsi}</td>
+                        <td style={{ padding: "10px 16px" }}>{formatRupiah(o.harga)}</td>
+                        <td style={{ padding: "10px 16px" }}>{formatDate(o.delivery_date)}</td>
+                      </tr>
+                    ))
+                  ) : (
+                    <tr><td colSpan={5} style={{ textAlign: "center", padding: "20px" }}>Belum ada data</td></tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* --- REKAP KESELURUHAN (Eksisting) --- */}
+      <h2 style={{ fontSize: 18, fontWeight: 600, marginBottom: 16, marginTop: 32, borderTop: "1px solid #e5e7eb", paddingTop: 32 }}>Evaluasi Performa CS</h2>
 
       {loading ? (
         <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 10, marginBottom: 16 }}>
@@ -73,7 +190,7 @@ export default function CSPerformancePage() {
         </div>
 
         <div className="erp-card">
-          <p style={{ fontSize: 13, fontWeight: 700, marginBottom: 14 }}>Ringkasan Bulanan</p>
+          <p style={{ fontSize: 13, fontWeight: 700, marginBottom: 14 }}>Ringkasan per CS</p>
           <table>
             <thead><tr><th>CS</th><th>Lead</th><th>Closing</th><th>Rate</th><th>Status</th></tr></thead>
             <tbody>
@@ -111,9 +228,9 @@ export default function CSPerformancePage() {
             <thead>
               <tr>
                 <th>Nama CS</th>
-                {[1, 2, 3, 4].map(w => (
-                  <Fragment key={`wk-${w}`}>
-                    <th>P{w} Lead</th>
+                {csData[0]?.weekly?.map((_: any, i: number) => (
+                  <Fragment key={`wk-${i}`}>
+                    <th>Pekan {i + 1} Lead</th>
                     <th>Closing</th>
                     <th>Rate</th>
                   </Fragment>
