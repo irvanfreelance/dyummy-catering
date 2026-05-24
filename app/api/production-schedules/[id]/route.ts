@@ -13,7 +13,13 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
         (SELECT json_agg(json_build_object(
           'id', sm.id, 'recipe_id', sm.recipe_id, 'menu_name', r.menu_name,
           'quantity_pax', sm.quantity_pax, 'hpp_subtotal', sm.hpp_subtotal, 'standard_cost', r.standard_cost
-        )) FROM schedule_menus sm JOIN recipes r ON sm.recipe_id = r.id WHERE sm.schedule_id = ps.id) as menus
+        )) FROM schedule_menus sm JOIN recipes r ON sm.recipe_id = r.id WHERE sm.schedule_id = ps.id) as menus,
+        (SELECT json_agg(json_build_object(
+          'id', pi.id, 'item_name', pi.item_name, 'quantity', pi.quantity,
+          'uom', pi.uom, 'estimated_price', pi.estimated_price, 'subtotal', pi.subtotal
+        )) FROM purchase_requests pr2
+         JOIN pr_items pi ON pi.pr_id = pr2.id
+         WHERE pr2.schedule_id = ps.id AND pr2.status = 'Draft') as custom_items
       FROM production_schedules ps LEFT JOIN users u ON ps.chef_id = u.id
       WHERE ps.id = $1`, [id]
     );

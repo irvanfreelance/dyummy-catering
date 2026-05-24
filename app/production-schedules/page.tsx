@@ -1,6 +1,8 @@
 "use client";
 import { useEffect, useState, useCallback } from "react";
-import { Plus, Check, AlertTriangle, FileText, Download } from "lucide-react";
+import Link from "next/link";
+import { Plus, AlertTriangle, FileText, Download, ClipboardList } from "lucide-react";
+
 import { Badge } from "@/components/ui/Badge";
 import { Modal } from "@/components/ui/Modal";
 import { PageHeader, FormRow, FormField } from "@/components/ui/PageHeader";
@@ -119,12 +121,19 @@ export default function ProductionSchedulesPage() {
                         <td style={{ fontWeight: 700, color: isOver ? "#E24B4A" : "#1D9E75" }}>{isOver ? "" : "+"}{fmt(variance)}</td>
                         <td><Badge color={statusBadgeColor(r.status)}>{r.status}</Badge></td>
                         <td>
-                          {r.status === "Approved" && (
-                            <button className="btn btn-primary btn-sm" onClick={() => generatePR(r.id)}><FileText size={11}/> Generate PR</button>
-                          )}
-                          {r.status === "Overbudget Warning" && (
-                            <span style={{ fontSize: 11, color: "#E24B4A", display: "flex", alignItems: "center", gap: 4 }}><AlertTriangle size={11}/> Overbudget</span>
-                          )}
+                          <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
+                            <Link href={`/production-schedules/${r.id}`}>
+                              <button className="btn btn-secondary btn-sm" style={{ display: "flex", alignItems: "center", gap: 4 }}>
+                                <ClipboardList size={11} /> Kelola Menu
+                              </button>
+                            </Link>
+                            {r.status === "Approved" && (
+                              <button className="btn btn-primary btn-sm" onClick={() => generatePR(r.id)}><FileText size={11}/> Generate PR</button>
+                            )}
+                            {r.status === "Overbudget Warning" && (
+                              <span style={{ fontSize: 11, color: "#E24B4A", display: "flex", alignItems: "center", gap: 4 }}><AlertTriangle size={11}/> Overbudget</span>
+                            )}
+                          </div>
                         </td>
                       </tr>
                     );
