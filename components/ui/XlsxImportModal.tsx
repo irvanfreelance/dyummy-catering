@@ -181,7 +181,7 @@ export function XlsxImportModal({
               <div style={{ marginBottom: 16, padding: "12px 16px", background: "#f0fdf4", borderRadius: 10, border: "1px solid #bbf7d0", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                 <div>
                   <p style={{ margin: 0, fontSize: 13, fontWeight: 600, color: "#166534" }}>Download Template Excel</p>
-                  <p style={{ margin: "2px 0 0", fontSize: 12, color: "#4ade80", color: "#15803d" }}>
+                  <p style={{ margin: "2px 0 0", fontSize: 12, color: "#15803d" }}>
                     Isi data mengikuti format kolom yang sudah tersedia
                   </p>
                 </div>
