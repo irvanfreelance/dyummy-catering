@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/Badge";
 import { Modal } from "@/components/ui/Modal";
 import { PageHeader, FormRow, FormField } from "@/components/ui/PageHeader";
 import { Pagination } from "@/components/ui/Pagination";
+import { SearchableSelect } from "@/components/ui/SearchableSelect";
 import { exportToExcel } from "@/lib/export";
 
 const C = { primary: "#1D9E75" };
@@ -91,10 +92,11 @@ export default function CustomersPage() {
       <div className="erp-card" style={{ marginBottom: 12, padding: "12px 16px" }}>
         <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
           <input value={search} onChange={e => setSearch(e.target.value)} placeholder="🔍 Cari nama, telepon, email..." style={{ width: 250 }} />
-          <select value={typeFilter} onChange={e => setTypeFilter(e.target.value)} style={{ width: 160 }}>
-            <option value="">Semua Tipe</option>
-            <option>Perorangan</option><option>Corporate</option><option>Instansi</option>
-          </select>
+          <SearchableSelect 
+            value={typeFilter} onChange={setTypeFilter} 
+            options={[{ value: "", label: "Semua Tipe" }, ...["Perorangan", "Corporate", "Instansi"].map(t => ({ value: t, label: t }))]} 
+            style={{ width: 160 }} 
+          />
           <button className="btn btn-secondary btn-sm" onClick={() => { setSearch(""); setTypeFilter(""); }}>Reset</button>
         </div>
       </div>
@@ -168,9 +170,11 @@ export default function CustomersPage() {
         </FormRow>
         <FormRow>
           <FormField label="Tipe Customer">
-            <select value={form.type} onChange={(e) => setForm((f) => ({ ...f, type: e.target.value }))}>
-              <option>Perorangan</option><option>Corporate</option><option>Instansi</option>
-            </select>
+            <SearchableSelect 
+              value={form.type} onChange={v => setForm((f) => ({ ...f, type: v }))}
+              options={["Perorangan", "Corporate", "Instansi"].map(t => ({ value: t, label: t }))}
+              menuPortalTarget={typeof document !== "undefined" ? document.body : null}
+            />
           </FormField>
           <FormField label="Email"><input type="email" value={form.email} onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))} placeholder="email@domain.com" /></FormField>
         </FormRow>

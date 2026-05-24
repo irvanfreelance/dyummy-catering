@@ -5,6 +5,7 @@ import { Plus, Edit2, Lock, UserPlus } from "lucide-react";
 import { Badge } from "@/components/ui/Badge";
 import { Modal } from "@/components/ui/Modal";
 import { PageHeader, FormRow, FormField } from "@/components/ui/PageHeader";
+import { SearchableSelect } from "@/components/ui/SearchableSelect";
 import { statusBadgeColor, roleColor } from "@/lib/utils";
 
 const C = { primary: "#1D9E75" };
@@ -107,16 +108,19 @@ export default function SettingsPage() {
         </FormRow>
         <FormRow>
           <FormField label="Role">
-            <select value={form.role} onChange={(e) => setForm((f) => ({ ...f, role: e.target.value }))}>
-              <option>CS / Sales</option><option>Kitchen</option><option>Purchasing</option>
-              <option>Finance</option><option>Super Admin</option>
-            </select>
+            <SearchableSelect 
+              value={form.role} onChange={v => setForm((f) => ({ ...f, role: v }))}
+              options={["CS / Sales", "Kitchen", "Purchasing", "Finance", "Super Admin"].map(r => ({ value: r, label: r }))}
+              menuPortalTarget={typeof document !== "undefined" ? document.body : null}
+            />
           </FormField>
           {editItem ? (
             <FormField label="Status">
-              <select value={form.status} onChange={(e) => setForm((f) => ({ ...f, status: e.target.value }))}>
-                <option>Aktif</option><option>Nonaktif</option>
-              </select>
+              <SearchableSelect 
+                value={form.status} onChange={v => setForm((f) => ({ ...f, status: v }))}
+                options={["Aktif", "Nonaktif"].map(s => ({ value: s, label: s }))}
+                menuPortalTarget={typeof document !== "undefined" ? document.body : null}
+              />
             </FormField>
           ) : (
             <FormField label="Password Awal"><input type="password" value={form.password} onChange={(e) => setForm((f) => ({ ...f, password: e.target.value }))} placeholder="Min. 8 karakter" /></FormField>

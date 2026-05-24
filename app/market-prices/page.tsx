@@ -6,6 +6,7 @@ import { StatCard } from "@/components/ui/StatCard";
 import { Badge } from "@/components/ui/Badge";
 import { Modal } from "@/components/ui/Modal";
 import { PageHeader, FormRow, FormField } from "@/components/ui/PageHeader";
+import { SearchableSelect } from "@/components/ui/SearchableSelect";
 import { fmt } from "@/lib/utils";
 
 // Market prices stored in DB later — for now using ingredient_prices from DB via a custom table
@@ -110,17 +111,21 @@ export default function MarketPricesPage() {
         <FormRow>
           <FormField label="Nama Bahan"><input value={form.name} onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))} placeholder="Daging Sapi, Cabai, dll..." disabled={!!editItem} /></FormField>
           <FormField label="Kategori">
-            <select value={form.category} onChange={(e) => setForm((f) => ({ ...f, category: e.target.value }))}>
-              <option>Protein</option><option>Bumbu</option><option>Pokok</option><option>Sayuran</option>
-            </select>
+            <SearchableSelect 
+              value={form.category} onChange={v => setForm((f) => ({ ...f, category: v }))}
+              options={["Protein", "Bumbu", "Pokok", "Sayuran"].map(c => ({ value: c, label: c }))}
+              menuPortalTarget={typeof document !== "undefined" ? document.body : null}
+            />
           </FormField>
         </FormRow>
         <FormRow>
           <FormField label="Harga Terkini (Rp)"><input type="number" value={form.currentPrice} onChange={(e) => setForm((f) => ({ ...f, currentPrice: e.target.value }))} placeholder="125000" /></FormField>
           <FormField label="Satuan (UoM)">
-            <select value={form.uom} onChange={(e) => setForm((f) => ({ ...f, uom: e.target.value }))}>
-              <option>Kg</option><option>Ekor</option><option>Ikat</option><option>Buah</option><option>Liter</option>
-            </select>
+            <SearchableSelect 
+              value={form.uom} onChange={v => setForm((f) => ({ ...f, uom: v }))}
+              options={["Kg", "Ekor", "Ikat", "Buah", "Liter"].map(u => ({ value: u, label: u }))}
+              menuPortalTarget={typeof document !== "undefined" ? document.body : null}
+            />
           </FormField>
         </FormRow>
         <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>

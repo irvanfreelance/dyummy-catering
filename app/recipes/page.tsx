@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/Badge";
 import { Modal } from "@/components/ui/Modal";
 import { PageHeader, FormRow, FormField } from "@/components/ui/PageHeader";
 import { Pagination } from "@/components/ui/Pagination";
+import { SearchableSelect } from "@/components/ui/SearchableSelect";
 import { fmt } from "@/lib/utils";
 import { exportToExcel } from "@/lib/export";
 
@@ -86,10 +87,11 @@ export default function RecipesPage() {
       <div className="erp-card" style={{ marginBottom: 12, padding: "12px 16px" }}>
         <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
           <input value={search} onChange={e => setSearch(e.target.value)} placeholder="🔍 Cari nama menu..." style={{ width: 250 }} />
-          <select value={fProduct} onChange={e => setFProduct(e.target.value)} style={{ width: 200 }}>
-            <option value="">Semua Produk</option>
-            {products.map((p: any) => <option key={p.id} value={p.id}>{p.name}</option>)}
-          </select>
+          <SearchableSelect 
+            value={fProduct} onChange={setFProduct} 
+            options={[{ value: "", label: "Semua Produk" }, ...products.map((p: any) => ({ value: p.id, label: p.name }))]} 
+            style={{ width: 200 }} 
+          />
           <button className="btn btn-secondary btn-sm" onClick={() => { setSearch(""); setFProduct(""); }}>Reset</button>
         </div>
       </div>
@@ -137,10 +139,14 @@ export default function RecipesPage() {
           <input value={form.menu_name} onChange={(e) => setForm((f) => ({ ...f, menu_name: e.target.value }))} placeholder="Contoh: Rendang Daging Sapi" />
         </FormField>
         <FormField label="Produk (Paket)" style={{ marginBottom: 14 }}>
-          <select value={form.product_id} onChange={(e) => setForm((f) => ({ ...f, product_id: e.target.value }))}>
-            <option value="">-- Pilih Produk --</option>
-            {products.map((p: any) => <option key={p.id} value={p.id}>{p.name}</option>)}
-          </select>
+          <SearchableSelect 
+            value={form.product_id} onChange={v => setForm((f) => ({ ...f, product_id: v }))}
+            options={[
+              { value: "", label: "-- Pilih Produk --" },
+              ...products.map((p: any) => ({ value: p.id, label: p.name }))
+            ]}
+            menuPortalTarget={typeof document !== "undefined" ? document.body : null}
+          />
         </FormField>
         <FormField label="Bahan-Bahan" style={{ marginBottom: 14 }}>
           <textarea rows={3} value={form.ingredients} onChange={(e) => setForm((f) => ({ ...f, ingredients: e.target.value }))} placeholder="Daging Sapi 200gr, Bumbu Rendang, Kelapa..." />

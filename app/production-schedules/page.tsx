@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/Badge";
 import { Modal } from "@/components/ui/Modal";
 import { PageHeader, FormRow, FormField } from "@/components/ui/PageHeader";
 import { Pagination } from "@/components/ui/Pagination";
+import { SearchableSelect } from "@/components/ui/SearchableSelect";
 import { fmt, statusBadgeColor } from "@/lib/utils";
 import { exportToExcel } from "@/lib/export";
 
@@ -82,10 +83,11 @@ export default function ProductionSchedulesPage() {
 
       <div className="erp-card" style={{ marginBottom: 12, padding: "12px 16px" }}>
         <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
-          <select value={fStatus} onChange={e => setFStatus(e.target.value)} style={{ width: 180 }}>
-            <option value="">Semua Status</option>
-            {STATUSES.map(s => <option key={s}>{s}</option>)}
-          </select>
+          <SearchableSelect 
+            value={fStatus} onChange={setFStatus} 
+            options={[{ value: "", label: "Semua Status" }, ...STATUSES.map(s => ({ value: s, label: s }))]} 
+            style={{ width: 180 }} 
+          />
           <input type="date" value={fDateFrom} onChange={e => setFDateFrom(e.target.value)} style={{ width: 140 }} title="Dari tanggal" />
           <input type="date" value={fDateTo} onChange={e => setFDateTo(e.target.value)} style={{ width: 140 }} title="Sampai tanggal" />
           <button className="btn btn-secondary btn-sm" onClick={() => { setFStatus(""); setFDateFrom(""); setFDateTo(""); }}>Reset</button>
@@ -142,10 +144,14 @@ export default function ProductionSchedulesPage() {
       <Modal show={showModal} onClose={() => setShowModal(false)} title="Buat Jadwal Produksi Baru">
         <FormRow>
           <FormField label="Chef Penanggung Jawab">
-            <select value={form.chef_id} onChange={e => setForm(f => ({ ...f, chef_id: e.target.value }))}>
-              <option value="">-- Pilih Chef --</option>
-              {users.filter((u: any) => u.role === "Kitchen").map((u: any) => <option key={u.id} value={u.id}>{u.name}</option>)}
-            </select>
+            <SearchableSelect 
+              value={form.chef_id} onChange={v => setForm(f => ({ ...f, chef_id: v }))}
+              options={[
+                { value: "", label: "-- Pilih Chef --" },
+                ...users.filter((u: any) => u.role === "Kitchen").map((u: any) => ({ value: u.id, label: u.name }))
+              ]}
+              menuPortalTarget={typeof document !== "undefined" ? document.body : null}
+            />
           </FormField>
           <FormField label="Tanggal Produksi">
             <input type="date" value={form.target_date} onChange={e => setForm(f => ({ ...f, target_date: e.target.value }))} />

@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/Badge";
 import { Modal } from "@/components/ui/Modal";
 import { PageHeader, FormRow, FormField } from "@/components/ui/PageHeader";
 import { Pagination } from "@/components/ui/Pagination";
+import { SearchableSelect } from "@/components/ui/SearchableSelect";
 import { statusBadgeColor } from "@/lib/utils";
 import { exportToExcel } from "@/lib/export";
 
@@ -28,7 +29,10 @@ export default function LeadsPage() {
   const [fDateFrom, setFDateFrom] = useState("");
   const [fDateTo, setFDateTo] = useState("");
 
-  const [form, setForm] = useState({ customer_id: "", pic_id: "", lead_date: new Date().toISOString().split("T")[0], source: "WhatsApp", status: "Prospek", tags: "", notes: "" });
+  const [form, setForm] = useState({ 
+    customer_id: "", customer_name: "", customer_phone: "",
+    pic_id: "", lead_date: new Date().toISOString().split("T")[0], source: "WhatsApp", status: "Prospek", tags: "", notes: "" 
+  });
 
   const buildQs = useCallback((page = 1, lim = meta.limit) => {
     const p = new URLSearchParams({ page: String(page), limit: String(lim) });
@@ -58,6 +62,7 @@ export default function LeadsPage() {
 
   const handleSave = async () => {
     if (!form.customer_id) return alert("Pilih customer");
+    if (form.customer_id === "new" && !form.customer_phone) return alert("Nomor WA wajib diisi untuk customer baru");
     const url = editItem ? `/api/leads/${editItem.id}` : "/api/leads";
     const method = editItem ? "PUT" : "POST";
     const res = await fetch(url, { method, headers: { "Content-Type": "application/json" }, body: JSON.stringify(form) });
@@ -91,7 +96,7 @@ export default function LeadsPage() {
         actions={
           <div style={{ display: "flex", gap: 8 }}>
             <button className="btn btn-secondary btn-sm" onClick={handleExport}><Download size={14} /> Export Excel</button>
-            <button className="btn btn-primary" onClick={() => { setEditItem(null); setForm({ customer_id: "", pic_id: "", lead_date: new Date().toISOString().split("T")[0], source: "WhatsApp", status: "Prospek", tags: "", notes: "" }); setShowModal(true); }}><Plus size={14} /> Tambah Lead</button>
+            <button className="btn className=btn-primary" onClick={() => { setEditItem(null); setForm({ customer_id: "", customer_name: "", customer_phone: "", pic_id: "", lead_date: new Date().toISOString().split("T")[0], source: "WhatsApp", status: "Prospek", tags: "", notes: "" }); setShowModal(true); }}><Plus size={14} /> Tambah Lead</button>
           </div>
         }
       />
@@ -100,18 +105,21 @@ export default function LeadsPage() {
       <div className="erp-card" style={{ marginBottom: 12, padding: "12px 16px" }}>
         <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
           <input value={search} onChange={e => setSearch(e.target.value)} placeholder="🔍 Cari nama, tag, catatan..." style={{ width: 200 }} />
-          <select value={fStatus} onChange={e => setFStatus(e.target.value)} style={{ width: 140 }}>
-            <option value="">Semua Status</option>
-            {STATUSES.map(s => <option key={s}>{s}</option>)}
-          </select>
-          <select value={fSource} onChange={e => setFSource(e.target.value)} style={{ width: 140 }}>
-            <option value="">Semua Sumber</option>
-            {SOURCES.map(s => <option key={s}>{s}</option>)}
-          </select>
-          <select value={fPic} onChange={e => setFPic(e.target.value)} style={{ width: 160 }}>
-            <option value="">Semua CS</option>
-            {users.filter((u: any) => u.role === "CS / Sales").map((u: any) => <option key={u.id} value={u.id}>{u.name}</option>)}
-          </select>
+          <SearchableSelect 
+            value={fStatus} onChange={setFStatus} 
+            options={[{ value: "", label: "Semua Status" }, ...STATUSES.map(s => ({ value: s, label: s }))]} 
+            style={{ width: 140 }} 
+          />
+          <SearchableSelect 
+            value={fSource} onChange={setFSource} 
+            options={[{ value: "", label: "Semua Sumber" }, ...SOURCES.map(s => ({ value: s, label: s }))]} 
+            style={{ width: 140 }} 
+          />
+          <SearchableSelect 
+            value={fPic} onChange={setFPic} 
+            options={[{ value: "", label: "Semua CS" }, ...users.filter((u: any) => u.role === "CS / Sales").map((u: any) => ({ value: u.id, label: u.name }))]} 
+            style={{ width: 160 }} 
+          />
           <input type="date" value={fDateFrom} onChange={e => setFDateFrom(e.target.value)} style={{ width: 140 }} title="Dari tanggal" />
           <input type="date" value={fDateTo} onChange={e => setFDateTo(e.target.value)} style={{ width: 140 }} title="Sampai tanggal" />
           <button className="btn btn-secondary btn-sm" onClick={() => { setSearch(""); setFStatus(""); setFSource(""); setFPic(""); setFDateFrom(""); setFDateTo(""); }}>Reset</button>
@@ -159,7 +167,7 @@ export default function LeadsPage() {
                       <td style={{ fontSize: 11 }}>{r.tags || "-"}</td>
                       <td style={{ fontSize: 11, color: "#6b7280", maxWidth: 180, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{r.notes || "-"}</td>
                       <td>
-                        <button className="btn btn-secondary btn-sm" onClick={() => { setEditItem(r); setForm({ customer_id: r.customer_id, pic_id: r.pic_id || "", lead_date: String(r.lead_date).slice(0,10), source: r.source, status: r.status, tags: r.tags || "", notes: r.notes || "" }); setShowModal(true); }}>Edit</button>
+                        <button className="btn btn-secondary btn-sm" onClick={() => { setEditItem(r); setForm({ customer_id: r.customer_id, customer_name: "", customer_phone: "", pic_id: r.pic_id || "", lead_date: String(r.lead_date).slice(0,10), source: r.source, status: r.status, tags: r.tags || "", notes: r.notes || "" }); setShowModal(true); }}>Edit</button>
                       </td>
                     </tr>
                   ))}
@@ -178,31 +186,56 @@ export default function LeadsPage() {
       <Modal show={showModal} onClose={() => { setShowModal(false); setEditItem(null); }} title={editItem ? "Edit Lead" : "Tambah Lead"}>
         <FormRow>
           <FormField label="Customer">
-            <select value={form.customer_id} onChange={e => setForm(f => ({ ...f, customer_id: e.target.value }))}>
-              <option value="">-- Pilih --</option>
-              {customers.map((c: any) => <option key={c.id} value={c.id}>{c.name}</option>)}
-            </select>
+            <SearchableSelect 
+              value={form.customer_id} onChange={v => setForm(f => ({ ...f, customer_id: v }))}
+              options={[
+                { value: "", label: "-- Pilih --" },
+                { value: "new", label: "+ Tambah Baru (via WA)", color: "#1D9E75", isBold: true },
+                ...customers.map((c: any) => ({ value: c.id, label: c.name }))
+              ]}
+              menuPortalTarget={typeof document !== "undefined" ? document.body : null}
+            />
           </FormField>
           <FormField label="CS PIC">
-            <select value={form.pic_id} onChange={e => setForm(f => ({ ...f, pic_id: e.target.value }))}>
-              <option value="">-- Pilih CS --</option>
-              {users.filter((u: any) => u.role === "CS / Sales").map((u: any) => <option key={u.id} value={u.id}>{u.name}</option>)}
-            </select>
+            <SearchableSelect 
+              value={form.pic_id} onChange={v => setForm(f => ({ ...f, pic_id: v }))}
+              options={[
+                { value: "", label: "-- Pilih CS --" },
+                ...users.filter((u: any) => u.role === "CS / Sales").map((u: any) => ({ value: u.id, label: u.name }))
+              ]}
+              menuPortalTarget={typeof document !== "undefined" ? document.body : null}
+            />
           </FormField>
         </FormRow>
+
+        {form.customer_id === "new" && (
+          <FormRow>
+            <FormField label="Nama Customer Baru">
+              <input value={form.customer_name} onChange={e => setForm(f => ({ ...f, customer_name: e.target.value }))} placeholder="Nama Lengkap / Instansi" />
+            </FormField>
+            <FormField label="Nomor WhatsApp">
+              <input value={form.customer_phone} onChange={e => setForm(f => ({ ...f, customer_phone: e.target.value }))} placeholder="08123456789" />
+            </FormField>
+          </FormRow>
+        )}
+
         <FormRow>
           <FormField label="Tanggal Lead"><input type="date" value={form.lead_date} onChange={e => setForm(f => ({ ...f, lead_date: e.target.value }))} /></FormField>
           <FormField label="Sumber">
-            <select value={form.source} onChange={e => setForm(f => ({ ...f, source: e.target.value }))}>
-              {SOURCES.map(s => <option key={s}>{s}</option>)}
-            </select>
+            <SearchableSelect 
+              value={form.source} onChange={v => setForm(f => ({ ...f, source: v }))}
+              options={SOURCES.map(s => ({ value: s, label: s }))}
+              menuPortalTarget={typeof document !== "undefined" ? document.body : null}
+            />
           </FormField>
         </FormRow>
         <FormRow>
           <FormField label="Status">
-            <select value={form.status} onChange={e => setForm(f => ({ ...f, status: e.target.value }))}>
-              {STATUSES.map(s => <option key={s}>{s}</option>)}
-            </select>
+            <SearchableSelect 
+              value={form.status} onChange={v => setForm(f => ({ ...f, status: v }))}
+              options={STATUSES.map(s => ({ value: s, label: s }))}
+              menuPortalTarget={typeof document !== "undefined" ? document.body : null}
+            />
           </FormField>
           <FormField label="Tags"><input value={form.tags} onChange={e => setForm(f => ({ ...f, tags: e.target.value }))} placeholder="pernikahan, korporat..." /></FormField>
         </FormRow>

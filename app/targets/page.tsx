@@ -8,6 +8,7 @@ import { Plus, Edit2, Trash2 } from "lucide-react";
 import { Badge } from "@/components/ui/Badge";
 import { Modal } from "@/components/ui/Modal";
 import { PageHeader, FormRow, FormField } from "@/components/ui/PageHeader";
+import { SearchableSelect } from "@/components/ui/SearchableSelect";
 import { fmt } from "@/lib/utils";
 
 const C = { primary: "#1D9E75", danger: "#E24B4A", warning: "#BA7517", success: "#639922" };
@@ -172,10 +173,11 @@ export default function TargetsPage() {
         <FormRow>
           <FormField label="Periode"><input value={form.periode} onChange={(e) => setForm((f) => ({ ...f, periode: e.target.value }))} placeholder="Mei 2026" /></FormField>
           <FormField label="Jenis KPI">
-            <select value={form.jenis} onChange={(e) => setForm((f) => ({ ...f, jenis: e.target.value }))}>
-              <option>Revenue</option><option>Closing Rate</option><option>Order Count</option>
-              <option>Gross Margin</option><option>Lead Masuk</option><option>BPP %</option>
-            </select>
+            <SearchableSelect 
+              value={form.jenis} onChange={v => setForm((f) => ({ ...f, jenis: v }))}
+              options={["Revenue", "Closing Rate", "Order Count", "Gross Margin", "Lead Masuk", "BPP %"].map(j => ({ value: j, label: j }))}
+              menuPortalTarget={typeof document !== "undefined" ? document.body : null}
+            />
           </FormField>
         </FormRow>
         <FormRow>
@@ -183,10 +185,16 @@ export default function TargetsPage() {
           <FormField label="Realisasi (Angka)"><input type="number" value={form.realisasi} onChange={(e) => setForm((f) => ({ ...f, realisasi: e.target.value }))} placeholder="49200000" /></FormField>
         </FormRow>
         <FormField label="Satuan" style={{ marginBottom: 14 }}>
-          <select value={form.satuan} onChange={(e) => setForm((f) => ({ ...f, satuan: e.target.value }))}>
-            <option value="Rp">Rp (Rupiah)</option><option value="%">% (Persen)</option>
-            <option value="order">order</option><option value="lead">lead</option>
-          </select>
+          <SearchableSelect 
+            value={form.satuan} onChange={v => setForm((f) => ({ ...f, satuan: v }))}
+            options={[
+              { value: "Rp", label: "Rp (Rupiah)" },
+              { value: "%", label: "% (Persen)" },
+              { value: "order", label: "order" },
+              { value: "lead", label: "lead" }
+            ]}
+            menuPortalTarget={typeof document !== "undefined" ? document.body : null}
+          />
         </FormField>
         <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
           <button className="btn btn-secondary" onClick={() => setShowModal(false)}>Batal</button>

@@ -17,6 +17,7 @@ export default function CSPerformancePage() {
   const [loading, setLoading] = useState(true);
   const [startDate, setStartDate] = useState(mtdStr);
   const [endDate, setEndDate] = useState(todayStr);
+  const [activeTab, setActiveTab] = useState<'ringkasan' | 'evaluasi'>('ringkasan');
 
   useEffect(() => {
     setLoading(true);
@@ -51,7 +52,35 @@ export default function CSPerformancePage() {
         }
       />
 
-      {/* --- DASHBOARD RINGKASAN --- */}
+      <div style={{ display: 'flex', gap: '16px', marginBottom: '24px', borderBottom: '1px solid #e5e7eb', paddingBottom: '0px' }}>
+        <button 
+          onClick={() => setActiveTab('ringkasan')}
+          style={{ 
+            padding: '10px 16px', 
+            fontWeight: 600, 
+            fontSize: 14,
+            color: activeTab === 'ringkasan' ? C.primary : '#6b7280',
+            borderBottom: activeTab === 'ringkasan' ? `2px solid ${C.primary}` : '2px solid transparent',
+            background: 'none', borderTop: 'none', borderLeft: 'none', borderRight: 'none', cursor: 'pointer'
+          }}>
+          Dashboard Ringkasan
+        </button>
+        <button 
+          onClick={() => setActiveTab('evaluasi')}
+          style={{ 
+            padding: '10px 16px', 
+            fontWeight: 600, 
+            fontSize: 14,
+            color: activeTab === 'evaluasi' ? C.primary : '#6b7280',
+            borderBottom: activeTab === 'evaluasi' ? `2px solid ${C.primary}` : '2px solid transparent',
+            background: 'none', borderTop: 'none', borderLeft: 'none', borderRight: 'none', cursor: 'pointer'
+          }}>
+          Evaluasi Performa CS
+        </button>
+      </div>
+
+      {/* --- TAB 1: DASHBOARD RINGKASAN --- */}
+      {activeTab === 'ringkasan' && (
       <div style={{ marginBottom: 32 }}>
         <h2 style={{ fontSize: 18, fontWeight: 600, marginBottom: 16 }}>Ringkasan Data ({formatDate(startDate)} - {formatDate(endDate)})</h2>
         
@@ -150,9 +179,12 @@ export default function CSPerformancePage() {
           </div>
         </div>
       </div>
+      )}
 
-      {/* --- REKAP KESELURUHAN (Eksisting) --- */}
-      <h2 style={{ fontSize: 18, fontWeight: 600, marginBottom: 16, marginTop: 32, borderTop: "1px solid #e5e7eb", paddingTop: 32 }}>Evaluasi Performa CS</h2>
+      {/* --- TAB 2: REKAP KESELURUHAN (Eksisting) --- */}
+      {activeTab === 'evaluasi' && (
+      <div>
+        <h2 style={{ fontSize: 18, fontWeight: 600, marginBottom: 16 }}>Evaluasi Performa CS</h2>
 
       {loading ? (
         <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 10, marginBottom: 16 }}>
@@ -256,6 +288,8 @@ export default function CSPerformancePage() {
           </table>
         </div>
       </div>
+      </div>
+      )}
     </div>
   );
 }

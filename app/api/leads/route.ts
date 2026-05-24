@@ -40,12 +40,28 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
-  const { customer_id, pic_id, lead_date, source, status, tags, notes } = await req.json();
+  const { customer_id, customer_name, customer_phone, pic_id, lead_date, source, status, tags, notes } = await req.json();
   const client = await pool.connect();
   try {
+    let final_customer_id = customer_id;
+    
+    // Handle new customer logic from WA number
+    if (final_customer_id === "new") {
+      const exist = await client.query("SELECT id FROM customers WHERE phone = $1", [customer_phone]);
+      if (exist.rows.length > 0) {
+        final_customer_id = exist.rows[0].id;
+      } else {
+        const ins = await client.query(
+          "INSERT INTO customers (name, phone, type) VALUES ($1, $2, $3) RETURNING id",
+          [customer_name || "Customer Baru", customer_phone, "Personal"]
+        );
+        final_customer_id = ins.rows[0].id;
+      }
+    }
+
     const res = await client.query(
       `INSERT INTO leads (customer_id,pic_id,lead_date,source,status,tags,notes) VALUES ($1,$2,$3,$4,$5,$6,$7) RETURNING *`,
-      [customer_id, pic_id, lead_date, source, status || "Prospek", tags, notes]
+      [final_customer_id, pic_id, lead_date, source, status || "Prospek", tags, notes]
     );
     return NextResponse.json(res.rows[0], { status: 201 });
   } finally { client.release(); }

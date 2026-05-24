@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/Badge";
 import { Modal } from "@/components/ui/Modal";
 import { PageHeader, FormRow, FormField } from "@/components/ui/PageHeader";
 import { Pagination } from "@/components/ui/Pagination";
+import { SearchableSelect } from "@/components/ui/SearchableSelect";
 import { fmt } from "@/lib/utils";
 import { exportToExcel } from "@/lib/export";
 
@@ -73,10 +74,11 @@ export default function FinancePage() {
 
       <div className="erp-card" style={{ marginBottom: 12, padding: "12px 16px" }}>
         <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
-          <select value={fCategory} onChange={e => setFCategory(e.target.value)} style={{ width: 180 }}>
-            <option value="">Semua Kategori</option>
-            {CATEGORIES.map(c => <option key={c}>{c}</option>)}
-          </select>
+          <SearchableSelect 
+            value={fCategory} onChange={setFCategory} 
+            options={[{ value: "", label: "Semua Kategori" }, ...CATEGORIES.map(c => ({ value: c, label: c }))]} 
+            style={{ width: 180 }} 
+          />
           <input type="date" value={fDateFrom} onChange={e => setFDateFrom(e.target.value)} style={{ width: 140 }} title="Dari tanggal" />
           <input type="date" value={fDateTo} onChange={e => setFDateTo(e.target.value)} style={{ width: 140 }} title="Sampai tanggal" />
           <button className="btn btn-secondary btn-sm" onClick={() => { setFCategory(""); setFDateFrom(""); setFDateTo(""); }}>Reset</button>
@@ -120,9 +122,11 @@ export default function FinancePage() {
       <Modal show={showModal} onClose={() => setShowModal(false)} title="Catat Pengeluaran Operasional (Overhead)">
         <FormRow>
           <FormField label="Kategori">
-            <select value={form.category} onChange={e => setForm(f => ({ ...f, category: e.target.value }))}>
-              {CATEGORIES.map(c => <option key={c}>{c}</option>)}
-            </select>
+            <SearchableSelect 
+              value={form.category} onChange={v => setForm(f => ({ ...f, category: v }))}
+              options={CATEGORIES.map(c => ({ value: c, label: c }))}
+              menuPortalTarget={typeof document !== "undefined" ? document.body : null}
+            />
           </FormField>
           <FormField label="Tanggal">
             <input type="date" value={form.expense_date} onChange={e => setForm(f => ({ ...f, expense_date: e.target.value }))} />
@@ -133,10 +137,14 @@ export default function FinancePage() {
             <input type="number" value={form.amount || ""} onChange={e => setForm(f => ({ ...f, amount: Number(e.target.value) }))} />
           </FormField>
           <FormField label="PIC Finance">
-            <select value={form.finance_id} onChange={e => setForm(f => ({ ...f, finance_id: e.target.value }))}>
-              <option value="">-- Pilih PIC --</option>
-              {users.filter((u: any) => u.role === "Finance").map((u: any) => <option key={u.id} value={u.id}>{u.name}</option>)}
-            </select>
+            <SearchableSelect 
+              value={form.finance_id} onChange={v => setForm(f => ({ ...f, finance_id: v }))}
+              options={[
+                { value: "", label: "-- Pilih PIC --" },
+                ...users.filter((u: any) => u.role === "Finance").map((u: any) => ({ value: u.id, label: u.name }))
+              ]}
+              menuPortalTarget={typeof document !== "undefined" ? document.body : null}
+            />
           </FormField>
         </FormRow>
         <FormField label="Catatan" style={{ marginBottom: 14 }}>

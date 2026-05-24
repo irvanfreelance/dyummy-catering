@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/Badge";
 import { Modal } from "@/components/ui/Modal";
 import { PageHeader, FormRow, FormField } from "@/components/ui/PageHeader";
 import { Pagination } from "@/components/ui/Pagination";
+import { SearchableSelect } from "@/components/ui/SearchableSelect";
 import { fmt, statusBadgeColor } from "@/lib/utils";
 import { exportToExcel } from "@/lib/export";
 
@@ -122,14 +123,16 @@ export default function OrdersPage() {
       <div className="erp-card" style={{ marginBottom: 12, padding: "12px 16px" }}>
         <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
           <input value={search} onChange={e => setSearch(e.target.value)} placeholder="🔍 Customer / venue..." style={{ width: 200 }} />
-          <select value={fStatus} onChange={e => setFStatus(e.target.value)} style={{ width: 140 }}>
-            <option value="">Semua Status Order</option>
-            {STATUS_ORDER.map(s => <option key={s}>{s}</option>)}
-          </select>
-          <select value={fPay} onChange={e => setFPay(e.target.value)} style={{ width: 150 }}>
-            <option value="">Semua Pembayaran</option>
-            {STATUS_PAY.map(s => <option key={s}>{s}</option>)}
-          </select>
+          <SearchableSelect 
+            value={fStatus} onChange={setFStatus} 
+            options={[{ value: "", label: "Semua Status Order" }, ...STATUS_ORDER.map(s => ({ value: s, label: s }))]} 
+            style={{ width: 160 }} 
+          />
+          <SearchableSelect 
+            value={fPay} onChange={setFPay} 
+            options={[{ value: "", label: "Semua Pembayaran" }, ...STATUS_PAY.map(s => ({ value: s, label: s }))]} 
+            style={{ width: 160 }} 
+          />
           <input type="date" value={fDateFrom} onChange={e => setFDateFrom(e.target.value)} style={{ width: 140 }} title="Kirim dari" />
           <input type="date" value={fDateTo} onChange={e => setFDateTo(e.target.value)} style={{ width: 140 }} title="Kirim sampai" />
           <button className="btn btn-secondary btn-sm" onClick={() => { setSearch(""); setFStatus(""); setFPay(""); setFDateFrom(""); setFDateTo(""); }}>Reset</button>
@@ -181,16 +184,24 @@ export default function OrdersPage() {
       <Modal show={showModal} onClose={() => setShowModal(false)} title="Buat Order Baru" width={680}>
         <FormRow>
           <FormField label="Customer">
-            <select value={form.customer_id} onChange={e => setForm(f => ({ ...f, customer_id: e.target.value }))}>
-              <option value="">-- Pilih Customer --</option>
-              {customers.map((c: any) => <option key={c.id} value={c.id}>{c.name}</option>)}
-            </select>
+            <SearchableSelect 
+              value={form.customer_id} onChange={v => setForm(f => ({ ...f, customer_id: v }))}
+              options={[
+                { value: "", label: "-- Pilih Customer --" },
+                ...customers.map((c: any) => ({ value: c.id, label: c.name }))
+              ]}
+              menuPortalTarget={typeof document !== "undefined" ? document.body : null}
+            />
           </FormField>
           <FormField label="PIC CS">
-            <select value={form.pic_id} onChange={e => setForm(f => ({ ...f, pic_id: e.target.value }))}>
-              <option value="">-- Pilih CS --</option>
-              {users.filter((u: any) => u.role === "CS / Sales").map((u: any) => <option key={u.id} value={u.id}>{u.name}</option>)}
-            </select>
+            <SearchableSelect 
+              value={form.pic_id} onChange={v => setForm(f => ({ ...f, pic_id: v }))}
+              options={[
+                { value: "", label: "-- Pilih CS --" },
+                ...users.filter((u: any) => u.role === "CS / Sales").map((u: any) => ({ value: u.id, label: u.name }))
+              ]}
+              menuPortalTarget={typeof document !== "undefined" ? document.body : null}
+            />
           </FormField>
         </FormRow>
         <FormRow>
@@ -200,9 +211,11 @@ export default function OrdersPage() {
         <FormRow>
           <FormField label="Jam Berangkat"><input type="time" value={form.departure_time} onChange={e => setForm(f => ({ ...f, departure_time: e.target.value }))} /></FormField>
           <FormField label="Status Bayar">
-            <select value={form.status_payment} onChange={e => setForm(f => ({ ...f, status_payment: e.target.value }))}>
-              {STATUS_PAY.map(s => <option key={s}>{s}</option>)}
-            </select>
+            <SearchableSelect 
+              value={form.status_payment} onChange={v => setForm(f => ({ ...f, status_payment: v }))}
+              options={STATUS_PAY.map(s => ({ value: s, label: s }))}
+              menuPortalTarget={typeof document !== "undefined" ? document.body : null}
+            />
           </FormField>
         </FormRow>
         <FormField label="Venue / Lokasi" style={{ marginBottom: 14 }}>
@@ -222,10 +235,15 @@ export default function OrdersPage() {
                 {form.items.map((item, idx) => (
                   <tr key={idx}>
                     <td>
-                      <select value={item.product_id} onChange={e => updateItem(idx, "product_id", e.target.value)} style={{ border: "none", padding: "4px 0", borderRadius: 0, fontSize: 13 }}>
-                        <option value="">-- Pilih Produk --</option>
-                        {products.map((p: any) => <option key={p.id} value={p.id}>{p.name}</option>)}
-                      </select>
+                      <SearchableSelect 
+                        value={item.product_id} onChange={v => updateItem(idx, "product_id", v)} 
+                        options={[
+                          { value: "", label: "-- Pilih Produk --" },
+                          ...products.map((p: any) => ({ value: p.id, label: p.name }))
+                        ]}
+                        menuPortalTarget={typeof document !== "undefined" ? document.body : null}
+                        style={{ minWidth: 150 }}
+                      />
                     </td>
                     <td><input type="number" value={item.quantity} min={1} onChange={e => updateItem(idx, "quantity", Number(e.target.value))} style={{ border: "none", textAlign: "center", width: 70, padding: "4px 0" }} /></td>
                     <td style={{ fontSize: 12, whiteSpace: "nowrap" }}>{fmt(item.price)}</td>

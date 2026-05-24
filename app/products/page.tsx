@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/Badge";
 import { Modal } from "@/components/ui/Modal";
 import { PageHeader, FormRow, FormField } from "@/components/ui/PageHeader";
 import { Pagination } from "@/components/ui/Pagination";
+import { SearchableSelect } from "@/components/ui/SearchableSelect";
 import { fmt } from "@/lib/utils";
 import { exportToExcel } from "@/lib/export";
 
@@ -65,10 +66,11 @@ export default function ProductsPage() {
       <div className="erp-card" style={{ marginBottom: 12, padding: "12px 16px" }}>
         <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
           <input value={search} onChange={e => setSearch(e.target.value)} placeholder="🔍 Cari nama produk..." style={{ width: 250 }} />
-          <select value={fCategory} onChange={e => setFCategory(e.target.value)} style={{ width: 160 }}>
-            <option value="">Semua Kategori</option>
-            {CATEGORIES.map(c => <option key={c}>{c}</option>)}
-          </select>
+          <SearchableSelect 
+            value={fCategory} onChange={setFCategory} 
+            options={[{ value: "", label: "Semua Kategori" }, ...CATEGORIES.map(c => ({ value: c, label: c }))]} 
+            style={{ width: 160 }} 
+          />
           <button className="btn btn-secondary btn-sm" onClick={() => { setSearch(""); setFCategory(""); }}>Reset</button>
         </div>
       </div>
@@ -111,17 +113,21 @@ export default function ProductsPage() {
         <FormRow>
           <FormField label="Nama Produk"><input value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} /></FormField>
           <FormField label="Kategori">
-            <select value={form.category} onChange={e => setForm(f => ({ ...f, category: e.target.value }))}>
-              {CATEGORIES.map(c => <option key={c}>{c}</option>)}
-            </select>
+            <SearchableSelect 
+              value={form.category} onChange={v => setForm(f => ({ ...f, category: v }))}
+              options={CATEGORIES.map(c => ({ value: c, label: c }))}
+              menuPortalTarget={typeof document !== "undefined" ? document.body : null}
+            />
           </FormField>
         </FormRow>
         <FormRow>
           <FormField label="Harga Jual (Rp)"><input type="number" value={form.price || ""} onChange={e => setForm(f => ({ ...f, price: Number(e.target.value) }))} /></FormField>
           <FormField label="Status">
-            <select value={form.status} onChange={e => setForm(f => ({ ...f, status: e.target.value }))}>
-              <option>Aktif</option><option>Nonaktif</option>
-            </select>
+            <SearchableSelect 
+              value={form.status} onChange={v => setForm(f => ({ ...f, status: v }))}
+              options={["Aktif", "Nonaktif"].map(s => ({ value: s, label: s }))}
+              menuPortalTarget={typeof document !== "undefined" ? document.body : null}
+            />
           </FormField>
         </FormRow>
         <FormField label="Deskripsi" style={{ marginBottom: 14 }}>

@@ -3,6 +3,7 @@ import { useEffect, useState, useCallback } from "react";
 import { Download } from "lucide-react";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { Pagination } from "@/components/ui/Pagination";
+import { SearchableSelect } from "@/components/ui/SearchableSelect";
 import { fmt, statusBadgeColor } from "@/lib/utils";
 import { exportToExcel } from "@/lib/export";
 import { Badge } from "@/components/ui/Badge";
@@ -52,14 +53,16 @@ export default function PurchasingPage() {
 
       <div className="erp-card" style={{ marginBottom: 12, padding: "12px 16px" }}>
         <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
-          <select value={fStatusPO} onChange={e => setFStatusPO(e.target.value)} style={{ width: 180 }}>
-            <option value="">Semua Status PO</option>
-            {STATUS_PO.map(s => <option key={s}>{s}</option>)}
-          </select>
-          <select value={fStatusCost} onChange={e => setFStatusCost(e.target.value)} style={{ width: 180 }}>
-            <option value="">Semua Status Biaya</option>
-            {STATUS_COST.map(s => <option key={s}>{s}</option>)}
-          </select>
+          <SearchableSelect 
+            value={fStatusPO} onChange={setFStatusPO} 
+            options={[{ value: "", label: "Semua Status PO" }, ...STATUS_PO.map(s => ({ value: s, label: s }))]} 
+            style={{ width: 180 }} 
+          />
+          <SearchableSelect 
+            value={fStatusCost} onChange={setFStatusCost} 
+            options={[{ value: "", label: "Semua Status Biaya" }, ...STATUS_COST.map(s => ({ value: s, label: s }))]} 
+            style={{ width: 180 }} 
+          />
           <button className="btn btn-secondary btn-sm" onClick={() => { setFStatusPO(""); setFStatusCost(""); }}>Reset</button>
         </div>
       </div>
