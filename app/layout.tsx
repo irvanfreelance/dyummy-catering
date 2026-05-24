@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import MainLayout from "@/components/MainLayout";
+import { RoleProvider } from "@/contexts/RoleContext";
 
 export const metadata: Metadata = {
   title: "Dyummy Catering ERP",
@@ -23,7 +24,9 @@ export default function RootLayout({
         />
       </head>
       <body className="min-h-full font-sans">
-        <MainLayout>{children}</MainLayout>
+        <RoleProvider>
+          <MainLayout>{children}</MainLayout>
+        </RoleProvider>
       </body>
     </html>
   );

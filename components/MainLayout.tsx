@@ -2,15 +2,17 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import {
   LayoutDashboard, Inbox, Users, ShoppingBag, BarChart2,
   CalendarDays, BookOpen, ClipboardList, TrendingUp, CreditCard,
-  PieChart, Settings, Menu, X, Utensils, Target, LogOut, ChefHat,
-  ShoppingCart, DollarSign, Truck,
+  PieChart, Settings, Menu, X, Utensils, Target, ChefHat,
+  ShoppingCart, DollarSign, Layers, LogIn,
 } from "lucide-react";
+import { useRole } from "@/contexts/RoleContext";
+import { getRoleConfig, ROLES } from "@/lib/roleConfig";
 
-const MENU = [
+const ALL_MENU = [
   {
     section: "Dashboard",
     items: [
@@ -60,9 +62,15 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [isMobile, setIsMobile] = useState(false);
   const pathname = usePathname();
+  const router = useRouter();
+  const { activeRole, setActiveRole } = useRole();
+  const roleConfig = getRoleConfig(activeRole);
 
-  // Hide sidebar on login/print pages
-  const isPublicPage = pathname?.startsWith("/login") || pathname?.startsWith("/print");
+  // Hide sidebar on login/print/login-sim pages
+  const isPublicPage =
+    pathname?.startsWith("/login") ||
+    pathname?.startsWith("/print") ||
+    pathname?.startsWith("/login-sim");
 
   useEffect(() => {
     const checkMobile = () => {
@@ -76,7 +84,6 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
     return () => window.removeEventListener("resize", checkMobile);
   }, []);
 
-  // Close sidebar on mobile when route changes
   useEffect(() => {
     if (isMobile) setSidebarOpen(false);
   }, [pathname, isMobile]);
@@ -85,14 +92,28 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
     return <>{children}</>;
   }
 
-  const activeLabel = MENU.flatMap((s) => s.items).find((i) => i.href === pathname)?.label || "Dashboard";
+  // Filter menu by role
+  const allowedHrefs = roleConfig.allowedHrefs;
+  const visibleMenu = allowedHrefs === "*"
+    ? ALL_MENU
+    : ALL_MENU.map((section) => ({
+        ...section,
+        items: section.items.filter((item) =>
+          (allowedHrefs as string[]).includes(item.href)
+        ),
+      })).filter((section) => section.items.length > 0);
+
+  const activeLabel =
+    ALL_MENU.flatMap((s) => s.items).find((i) => i.href === pathname)?.label || "Dashboard";
+
+  // Redirect if current page not accessible by this role
+  // (handled gracefully — just shows empty content, no hard redirect)
 
   return (
     <div style={{ display: "flex", minHeight: "100vh", background: "#f3f4f6", position: "relative" }}>
       {/* Mobile overlay */}
       {sidebarOpen && isMobile && (
         <div
-          className="sidebar-overlay"
           style={{ display: "block", position: "fixed", inset: 0, background: "rgba(0,0,0,0.45)", zIndex: 98 }}
           onClick={() => setSidebarOpen(false)}
         />
@@ -137,9 +158,32 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
           </div>
         </div>
 
+        {/* Role badge in sidebar */}
+        <div style={{ padding: "8px 12px", borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
+          <div style={{
+            background: "rgba(255,255,255,0.1)", borderRadius: 8, padding: "6px 10px",
+            display: "flex", alignItems: "center", gap: 8,
+          }}>
+            <div style={{
+              width: 22, height: 22, borderRadius: "50%",
+              background: roleConfig.color,
+              display: "flex", alignItems: "center", justifyContent: "center",
+              fontSize: 9, fontWeight: 800, color: "white", flexShrink: 0,
+            }}>
+              {roleConfig.initials}
+            </div>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <p style={{ fontSize: 11, fontWeight: 600, color: "white", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                {roleConfig.label}
+              </p>
+              <p style={{ fontSize: 9, color: "rgba(255,255,255,0.5)", marginTop: 1 }}>Mode Simulasi</p>
+            </div>
+          </div>
+        </div>
+
         {/* Nav */}
         <nav style={{ flex: 1, overflowY: "auto", padding: "10px 0" }}>
-          {MENU.map((section) => (
+          {visibleMenu.map((section) => (
             <div key={section.section}>
               <p style={{
                 fontSize: 9, fontWeight: 700, color: "rgba(255,255,255,0.4)",
@@ -174,6 +218,28 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
               })}
             </div>
           ))}
+
+          {/* Simulasi Login link — always visible */}
+          <div style={{ marginTop: 8, padding: "0 8px" }}>
+            <Link href="/login-sim" style={{ textDecoration: "none" }}>
+              <div style={{
+                display: "flex", alignItems: "center", gap: 9,
+                padding: "8px 8px",
+                background: pathname === "/login-sim" ? "rgba(255,255,255,0.18)" : "rgba(255,255,255,0.06)",
+                borderRadius: 8,
+                color: "rgba(255,255,255,0.7)",
+                fontSize: 12,
+                fontWeight: 500,
+                cursor: "pointer",
+                whiteSpace: "nowrap",
+                transition: "all 0.12s",
+                border: "1px dashed rgba(255,255,255,0.2)",
+              }}>
+                <LogIn size={13} style={{ flexShrink: 0 }} />
+                Ganti Peran / Role
+              </div>
+            </Link>
+          </div>
         </nav>
 
         {/* User profile */}
@@ -181,13 +247,15 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
             <div style={{
               width: 32, height: 32, borderRadius: "50%",
-              background: "rgba(255,255,255,0.22)",
+              background: roleConfig.color,
               display: "flex", alignItems: "center", justifyContent: "center",
               fontSize: 11, fontWeight: 700, color: "white",
-            }}>SA</div>
+            }}>
+              {roleConfig.initials}
+            </div>
             <div style={{ flex: 1, minWidth: 0 }}>
-              <p style={{ fontSize: 12, fontWeight: 600, color: "white", lineHeight: 1.2 }}>Super Admin</p>
-              <p style={{ fontSize: 10, color: "rgba(255,255,255,0.55)", marginTop: 1 }}>admin@catering.com</p>
+              <p style={{ fontSize: 12, fontWeight: 600, color: "white", lineHeight: 1.2 }}>{roleConfig.label}</p>
+              <p style={{ fontSize: 10, color: "rgba(255,255,255,0.55)", marginTop: 1 }}>Simulasi aktif</p>
             </div>
           </div>
         </div>
@@ -220,14 +288,29 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
             <p style={{ fontSize: 13, fontWeight: 600, color: "#374151" }}>{activeLabel}</p>
           </div>
           <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-            <span style={{
-              fontSize: 11, color: "#6b7280",
-              background: "#f9fafb",
-              border: "0.5px solid #e5e7eb",
-              padding: "4px 10px",
-              borderRadius: 20,
-            }}>Super Admin Mode</span>
-            <div style={{ width: 8, height: 8, borderRadius: "50%", background: "#639922" }} />
+            {/* Role chip */}
+            <Link href="/login-sim" style={{ textDecoration: "none" }}>
+              <span style={{
+                fontSize: 11,
+                background: roleConfig.bgColor,
+                color: roleConfig.color,
+                border: `1px solid ${roleConfig.color}40`,
+                padding: "4px 10px",
+                borderRadius: 20,
+                fontWeight: 600,
+                cursor: "pointer",
+                display: "flex",
+                alignItems: "center",
+                gap: 5,
+                transition: "opacity 0.15s",
+              }}>
+                <span style={{
+                  width: 7, height: 7, borderRadius: "50%",
+                  background: roleConfig.color, display: "inline-block",
+                }} />
+                {roleConfig.label}
+              </span>
+            </Link>
           </div>
         </header>
 
