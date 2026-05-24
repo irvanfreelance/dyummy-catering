@@ -22,7 +22,6 @@ export default function LeadsPage() {
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [showImport, setShowImport] = useState(false);
-  const [showImport, setShowImport] = useState(false);
   const [editItem, setEditItem] = useState<any>(null);
   const [itemToDelete, setItemToDelete] = useState<any>(null);
 

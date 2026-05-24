@@ -130,8 +130,7 @@ export default function TargetsPage() {
     setSaving(false);
   };
 
-    setSaving(false);
-  };
+
 
   const executeDelete = async () => {
     if (!itemToDelete) return;
