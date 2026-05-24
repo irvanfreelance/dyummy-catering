@@ -1,8 +1,9 @@
 "use client";
 import { useEffect, useState, useCallback } from "react";
-import { Plus, Filter, Download } from "lucide-react";
+import { Plus, Filter, Download, Upload } from "lucide-react";
 import { Badge } from "@/components/ui/Badge";
 import { Modal } from "@/components/ui/Modal";
+import { XlsxImportModal } from "@/components/ui/XlsxImportModal";
 import { PageHeader, FormRow, FormField } from "@/components/ui/PageHeader";
 import { Pagination } from "@/components/ui/Pagination";
 import { SearchableSelect } from "@/components/ui/SearchableSelect";
@@ -19,6 +20,7 @@ export default function LeadsPage() {
   const [users, setUsers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
+  const [showImport, setShowImport] = useState(false);
   const [editItem, setEditItem] = useState<any>(null);
 
   // Filters
@@ -96,6 +98,7 @@ export default function LeadsPage() {
         actions={
           <div style={{ display: "flex", gap: 8 }}>
             <button className="btn btn-secondary btn-sm" onClick={handleExport}><Download size={14} /> Export Excel</button>
+            <button className="btn btn-secondary btn-sm" onClick={() => setShowImport(true)} style={{ display: "flex", alignItems: "center", gap: 6 }}><Upload size={14} /> Import Excel</button>
             <button className="btn className=btn-primary" onClick={() => { setEditItem(null); setForm({ customer_id: "", customer_name: "", customer_phone: "", pic_id: "", lead_date: new Date().toISOString().split("T")[0], source: "WhatsApp", status: "Prospek", tags: "", notes: "" }); setShowModal(true); }}><Plus size={14} /> Tambah Lead</button>
           </div>
         }
@@ -182,6 +185,29 @@ export default function LeadsPage() {
           </>
         )}
       </div>
+
+      <XlsxImportModal
+        show={showImport}
+        onClose={() => setShowImport(false)}
+        onSuccess={() => fetchLeads(1, meta.limit)}
+        importUrl="/api/leads/import"
+        entityLabel="Lead"
+        columns={[
+          { key: "customer_name", label: "Nama Customer *" },
+          { key: "customer_phone", label: "No. HP" },
+          { key: "lead_date", label: "Tanggal (YYYY-MM-DD)" },
+          { key: "source", label: "Sumber" },
+          { key: "status", label: "Status" },
+          { key: "tags", label: "Tags" },
+          { key: "notes", label: "Catatan" },
+        ]}
+        templateData={[
+          { customer_name: "Rina Wijaya", customer_phone: "08112233445", lead_date: "2026-05-24", source: "WhatsApp", status: "Prospek", tags: "pernikahan", notes: "Tanya paket pernikahan 200 pax" },
+          { customer_name: "PT Sejahtera", customer_phone: "02198765432", lead_date: "2026-05-24", source: "Instagram", status: "Follow Up", tags: "korporat", notes: "Meeting Rabu depan" },
+          { customer_name: "Budi Santoso", customer_phone: "", lead_date: "2026-05-25", source: "Referral", status: "Negosiasi", tags: "", notes: "" },
+        ]}
+        templateFileName="Template_Import_Leads.xlsx"
+      />
 
       <Modal show={showModal} onClose={() => { setShowModal(false); setEditItem(null); }} title={editItem ? "Edit Lead" : "Tambah Lead"}>
         <FormRow>

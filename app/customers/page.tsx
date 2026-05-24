@@ -1,10 +1,11 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
-import { Users, Plus, Edit2, Download } from "lucide-react";
+import { Users, Plus, Edit2, Download, Upload } from "lucide-react";
 import { StatCard } from "@/components/ui/StatCard";
 import { Badge } from "@/components/ui/Badge";
 import { Modal } from "@/components/ui/Modal";
+import { XlsxImportModal } from "@/components/ui/XlsxImportModal";
 import { PageHeader, FormRow, FormField } from "@/components/ui/PageHeader";
 import { Pagination } from "@/components/ui/Pagination";
 import { SearchableSelect } from "@/components/ui/SearchableSelect";
@@ -22,6 +23,7 @@ export default function CustomersPage() {
   const [search, setSearch] = useState("");
   const [typeFilter, setTypeFilter] = useState("");
   const [showModal, setShowModal] = useState(false);
+  const [showImport, setShowImport] = useState(false);
   const [editItem, setEditItem] = useState<any>(null);
   const [form, setForm] = useState(EMPTY_FORM);
   const [loading, setLoading] = useState(true);
@@ -79,6 +81,7 @@ export default function CustomersPage() {
         actions={
           <div style={{ display: "flex", gap: 8 }}>
             <button className="btn btn-secondary btn-sm" onClick={handleExport}><Download size={14} /> Export Excel</button>
+            <button className="btn btn-secondary btn-sm" onClick={() => setShowImport(true)} style={{ display: "flex", alignItems: "center", gap: 6 }}><Upload size={14} /> Import Excel</button>
             <button className="btn btn-primary" onClick={openAdd}><Plus size={14} /> Tambah Kontak</button>
           </div>
         }
@@ -162,6 +165,28 @@ export default function CustomersPage() {
           </>
         )}
       </div>
+
+      <XlsxImportModal
+        show={showImport}
+        onClose={() => setShowImport(false)}
+        onSuccess={() => fetchCustomers(1, meta.limit)}
+        importUrl="/api/customers/import"
+        entityLabel="Customer"
+        columns={[
+          { key: "name", label: "Nama *" },
+          { key: "phone", label: "No. Telepon" },
+          { key: "email", label: "Email" },
+          { key: "type", label: "Tipe" },
+          { key: "address", label: "Alamat" },
+          { key: "notes", label: "Catatan" },
+        ]}
+        templateData={[
+          { name: "Budi Santoso", phone: "08123456789", email: "budi@email.com", type: "Perorangan", address: "Jl. Mawar No.1 Bandung", notes: "" },
+          { name: "PT Maju Jaya", phone: "02112345678", email: "info@majujaya.com", type: "Corporate", address: "Jl. Sudirman No.99 Jakarta", notes: "Langganan acara tahunan" },
+          { name: "Dinas Pendidikan Kota", phone: "02298765432", email: "", type: "Instansi", address: "Jl. Kebon Jati No.5 Bandung", notes: "" },
+        ]}
+        templateFileName="Template_Import_Customer.xlsx"
+      />
 
       <Modal show={showModal} onClose={() => setShowModal(false)} title={editItem ? "Edit Kontak" : "Tambah Kontak"}>
         <FormRow>
