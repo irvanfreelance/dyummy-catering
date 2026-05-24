@@ -1,223 +1,158 @@
 "use client";
-import React, { useState, useEffect } from 'react';
-import { Plus, Edit, Trash2, Search } from 'lucide-react';
-import Pagination from '@/components/ui/Pagination';
-import Select from 'react-select';
+
+import { useEffect, useState, useCallback } from "react";
+import { Plus, Edit2, Download } from "lucide-react";
+import { Badge } from "@/components/ui/Badge";
+import { Modal } from "@/components/ui/Modal";
+import { PageHeader, FormRow, FormField } from "@/components/ui/PageHeader";
+import { Pagination } from "@/components/ui/Pagination";
+import { fmt } from "@/lib/utils";
+import { exportToExcel } from "@/lib/export";
+
+const C = { primary: "#1D9E75" };
+
+const EMPTY_FORM = { product_id: "", menu_name: "", ingredients: "", standard_cost: "" };
 
 export default function RecipesPage() {
-  const [recipes, setRecipes] = useState<any[]>([]);
+  const [rows, setRows] = useState<any[]>([]);
+  const [meta, setMeta] = useState({ total: 0, page: 1, limit: 10, totalPages: 1 });
   const [products, setProducts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [showForm, setShowForm] = useState(false);
-  const [formData, setFormData] = useState({ id: '', product_id: '', ingredients: '', standard_cost: '' });
-  const [isEditing, setIsEditing] = useState(false);
+  const [showModal, setShowModal] = useState(false);
+  const [editItem, setEditItem] = useState<any>(null);
+  const [form, setForm] = useState(EMPTY_FORM);
+  const [search, setSearch] = useState("");
+  const [fProduct, setFProduct] = useState("");
 
-  // Filter & Pagination States
-  const [searchQuery, setSearchQuery] = useState('');
-  const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 10;
+  const buildQs = useCallback((page = 1, lim = meta.limit) => {
+    const p = new URLSearchParams({ page: String(page), limit: String(lim) });
+    if (search) p.set("search", search);
+    if (fProduct) p.set("product_id", fProduct);
+    return p.toString();
+  }, [search, fProduct]);
 
-  const fetchData = () => {
+  const fetchRecipes = useCallback((page = 1, lim = meta.limit) => {
     setLoading(true);
-    Promise.all([
-      fetch('/api/recipes/get-list').then(r => r.json()),
-      fetch('/api/products/get-list').then(r => r.json())
-    ]).then(([recipesData, productsData]) => {
-      setRecipes(recipesData);
-      setProducts(productsData);
-      setLoading(false);
-    }).catch(err => {
-      console.error(err);
-      setLoading(false);
+    fetch(`/api/recipes?${buildQs(page, lim)}`)
+      .then(r => r.json())
+      .then(d => { setRows(d.data || []); setMeta({ total: d.total, page: d.page, limit: d.limit, totalPages: d.totalPages }); })
+      .finally(() => setLoading(false));
+  }, [buildQs, meta.limit]);
+
+  useEffect(() => {
+    fetchRecipes(1, meta.limit);
+    fetch("/api/products?limit=100").then(r => r.json()).then(d => setProducts(d.data || []));
+  }, [fetchRecipes]);
+
+  const openAdd = () => { setEditItem(null); setForm(EMPTY_FORM); setShowModal(true); };
+  const openEdit = (r: any) => {
+    setEditItem(r);
+    setForm({ product_id: r.product_id, menu_name: r.menu_name, ingredients: r.ingredients, standard_cost: r.standard_cost });
+    setShowModal(true);
+  };
+
+  const handleSave = async () => {
+    if (!form.menu_name || !form.standard_cost) return alert("Nama menu dan HPP wajib diisi");
+    const url = editItem ? `/api/recipes/${editItem.id}` : "/api/recipes";
+    const method = editItem ? "PUT" : "POST";
+    const res = await fetch(url, {
+      method, headers: { "Content-Type": "application/json" }, body: JSON.stringify(form),
     });
+    if (res.ok) { setShowModal(false); fetchRecipes(meta.page); }
   };
 
-  useEffect(() => {
-    fetchData();
-  }, []);
-
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [searchQuery]);
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    const endpoint = isEditing ? '/api/recipes/update' : '/api/recipes/create';
-    const method = isEditing ? 'PUT' : 'POST';
-
-    try {
-      const res = await fetch(endpoint, {
-        method,
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...formData, standard_cost: Number(formData.standard_cost), product_id: Number(formData.product_id) })
-      });
-      if (res.ok) {
-        setShowForm(false);
-        fetchData();
-      } else {
-        const err = await res.json();
-        alert('Gagal: ' + (err.message || 'Unknown error'));
-      }
-    } catch (err) {
-      console.error(err);
-    }
+  const handleExport = async () => {
+    const p = new URLSearchParams({ page: "1", limit: "1000" });
+    if (search) p.set("search", search);
+    if (fProduct) p.set("product_id", fProduct);
+    const res = await fetch(`/api/recipes?${p}`);
+    const d = await res.json();
+    exportToExcel(d.data || [], "Data_Recipes");
   };
-
-  const handleEdit = (recipe: any) => {
-    setFormData({ ...recipe, product_id: recipe.product_id.toString(), standard_cost: recipe.standard_cost.toString() });
-    setIsEditing(true);
-    setShowForm(true);
-  };
-
-  const handleDelete = async (id: number) => {
-    if (!confirm('Apakah anda yakin ingin menghapus resep BOM ini?')) return;
-    try {
-      const res = await fetch('/api/recipes/delete', {
-        method: 'DELETE',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id })
-      });
-      if (res.ok) {
-        fetchData();
-      } else {
-        const err = await res.json();
-        alert('Gagal: ' + (err.message || 'Unknown error'));
-      }
-    } catch (err) {
-      console.error(err);
-    }
-  };
-
-  const formatRp = (num: number) => {
-    return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(num);
-  };
-
-  // Filter Logic
-  const filteredRecipes = recipes.filter(r => {
-    return r.product_name.toLowerCase().includes(searchQuery.toLowerCase());
-  });
-
-  // Pagination Logic
-  const totalPages = Math.ceil(filteredRecipes.length / itemsPerPage);
-  const currentItems = filteredRecipes.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
-
-  if (showForm) {
-    return (
-      <div className="bg-white rounded-2xl shadow-sm border border-slate-100 max-w-3xl mx-auto p-6">
-        <div className="flex items-center mb-6 border-b border-slate-100 pb-4">
-           <button onClick={() => setShowForm(false)} className="mr-4 text-slate-400 hover:text-slate-800">&larr; Kembali</button>
-           <h2 className="text-lg font-semibold text-slate-800">{isEditing ? 'Edit Resep BOM' : 'Tambah Resep BOM Baru'}</h2>
-        </div>
-        <form className="space-y-4" onSubmit={handleSubmit}>
-           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="md:col-span-2">
-                 <label className="text-sm font-medium text-slate-600 block mb-1">Produk *</label>
-                 <Select 
-                    options={products.map(p => ({ value: p.id, label: p.name }))}
-                    value={formData.product_id ? { value: formData.product_id, label: products.find(p => p.id.toString() === formData.product_id)?.name } : null}
-                    onChange={(selected: any) => setFormData({...formData, product_id: selected ? selected.value.toString() : ''})}
-                    placeholder="-- Cari & Pilih Produk --"
-                    isClearable
-                    required
-                    className="text-sm"
-                    menuPortalTarget={typeof document !== 'undefined' ? document.body : null}
-                    styles={{ menuPortal: base => ({ ...base, zIndex: 9999 }) }}
-                 />
-              </div>
-              <div>
-                 <label className="text-sm font-medium text-slate-600 block mb-1">Standard Cost / HPP (Rp) *</label>
-                 <input type="number" value={formData.standard_cost} onChange={e => setFormData({...formData, standard_cost: e.target.value})} required className="w-full p-2 border border-slate-300 rounded-md text-sm outline-none focus:border-blue-400" />
-              </div>
-              <div className="md:col-span-2">
-                 <label className="text-sm font-medium text-slate-600 block mb-1">Komposisi / Bahan</label>
-                 <textarea rows={4} value={formData.ingredients} onChange={e => setFormData({...formData, ingredients: e.target.value})} required placeholder="Contoh: Nasi Putih, Ayam Bakar, Box..." className="w-full p-2 border border-slate-300 rounded-md text-sm outline-none focus:border-blue-400"></textarea>
-              </div>
-           </div>
-           <div className="pt-4 flex justify-end space-x-3 border-t border-slate-100 mt-6">
-              <button type="button" onClick={() => setShowForm(false)} className="px-5 py-2 rounded-md text-slate-600 font-medium hover:bg-slate-100 transition-colors">Batal</button>
-              <button type="submit" className="px-5 py-2 rounded-md bg-blue-600 text-white font-medium hover:bg-blue-700 transition-colors shadow-sm">Simpan</button>
-           </div>
-        </form>
-      </div>
-    );
-  }
 
   return (
-    <div className="space-y-4">
-      <div className="flex justify-between items-center">
-        <div>
-           <h2 className="text-xl font-semibold text-slate-800">Master Recipes (BOM) & HPP</h2>
-           <p className="text-sm text-slate-500 mt-1">Kelola standar harga pokok modal dan bahan per paket.</p>
-        </div>
-        <button onClick={() => { setFormData({ id: '', product_id: '', ingredients: '', standard_cost: '' }); setIsEditing(false); setShowForm(true); }} className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2.5 rounded-md text-sm font-medium transition-colors shadow-sm flex items-center">
-          <Plus className="w-4 h-4 mr-2" /> Buat Resep (BOM)
-        </button>
-      </div>
-
-      <div className="bg-white p-5 rounded-2xl shadow-sm border border-slate-100">
-        <div className="flex flex-wrap gap-4 items-center">
-          <div className="relative">
-            <Search className="w-4 h-4 absolute left-3 top-2.5 text-slate-400" />
-            <input 
-              type="text" 
-              placeholder="Cari nama paket/produk..." 
-              value={searchQuery}
-              onChange={e => setSearchQuery(e.target.value)}
-              className="pl-9 pr-4 py-2 border border-slate-300 rounded-md text-sm w-64 outline-none focus:border-blue-500 transition-colors" 
-            />
+    <div>
+      <PageHeader
+        title="Master Resep & HPP Standar"
+        subtitle={`${meta.total} resep menu terdaftar`}
+        actions={
+          <div style={{ display: "flex", gap: 8 }}>
+            <button className="btn btn-secondary btn-sm" onClick={handleExport}><Download size={14} /> Export Excel</button>
+            <button className="btn btn-primary" onClick={openAdd}><Plus size={14} /> Tambah Resep</button>
           </div>
+        }
+      />
+
+      <div className="erp-card" style={{ marginBottom: 12, padding: "12px 16px" }}>
+        <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
+          <input value={search} onChange={e => setSearch(e.target.value)} placeholder="🔍 Cari nama menu..." style={{ width: 250 }} />
+          <select value={fProduct} onChange={e => setFProduct(e.target.value)} style={{ width: 200 }}>
+            <option value="">Semua Produk</option>
+            {products.map((p: any) => <option key={p.id} value={p.id}>{p.name}</option>)}
+          </select>
+          <button className="btn btn-secondary btn-sm" onClick={() => { setSearch(""); setFProduct(""); }}>Reset</button>
         </div>
       </div>
 
-      <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse whitespace-nowrap">
-            <thead>
-              <tr className="bg-slate-50 border-b border-slate-200 text-xs uppercase tracking-wider text-slate-500">
-                <th className="p-4 font-medium pl-6 w-16">No.</th>
-                <th className="p-4 font-medium">Paket (Produk)</th>
-                <th className="p-4 font-medium">Bahan / Komposisi</th>
-                <th className="p-4 font-medium">Std. Cost (HPP)</th>
-                <th className="p-4 font-medium">Margin Bruto</th>
-                <th className="p-4 font-medium text-center">Aksi</th>
-              </tr>
-            </thead>
-            <tbody className="text-sm text-slate-700">
-              {loading ? (
-                 <tr><td colSpan={6} className="text-center p-4">Loading...</td></tr>
-              ) : currentItems.length === 0 ? (
-                 <tr><td colSpan={6} className="text-center p-4">Tidak ada data.</td></tr>
-              ) : currentItems.map((rec, idx) => {
-                const marginAmount = Number(rec.selling_price) - Number(rec.standard_cost);
-                const marginPercent = Number(rec.selling_price) > 0 ? (marginAmount / Number(rec.selling_price)) * 100 : 0;
-                return (
-                  <tr key={rec.id} className="border-b border-slate-100 hover:bg-slate-50/80 transition-colors">
-                    <td className="p-4 pl-6 text-slate-500">{(currentPage - 1) * itemsPerPage + idx + 1}</td>
-                    <td className="p-4 font-medium text-slate-800">{rec.product_name}</td>
-                    <td className="p-4 text-slate-600 italic max-w-sm">{rec.ingredients}</td>
-                    <td className="p-4 font-medium text-amber-700">{formatRp(Number(rec.standard_cost))}</td>
-                    <td className="p-4">
-                       <span className="block font-medium text-emerald-600">{marginPercent.toFixed(1)}%</span>
-                       <span className="text-xs text-slate-500">({formatRp(marginAmount)})</span>
-                    </td>
-                    <td className="p-4 flex justify-center space-x-2">
-                      <button onClick={() => handleEdit(rec)} className="text-slate-400 hover:text-amber-500 p-1.5 transition-colors" title="Edit"><Edit className="w-4 h-4" /></button>
-                      <button onClick={() => handleDelete(rec.id)} className="text-slate-400 hover:text-rose-500 p-1.5 transition-colors" title="Hapus"><Trash2 className="w-4 h-4" /></button>
-                    </td>
+      <div className="erp-card-flush">
+        {loading ? <p style={{ padding: 24, color: "#6b7280", fontSize: 13 }}>Memuat...</p> : (
+          <>
+            <div style={{ overflowX: "auto" }}>
+              <table>
+                <thead>
+                  <tr>
+                    <th>#</th><th>Nama Menu</th><th>Produk (Kategori)</th>
+                    <th>Bahan Utama</th><th>HPP Standar/Porsi</th><th>Aksi</th>
                   </tr>
-                )
-              })}
-            </tbody>
-          </table>
-        </div>
-        <Pagination 
-          currentPage={currentPage}
-          totalPages={totalPages}
-          onPageChange={setCurrentPage}
-          totalItems={filteredRecipes.length}
-          itemsPerPage={itemsPerPage}
-        />
+                </thead>
+                <tbody>
+                  {rows.length === 0 ? (
+                    <tr><td colSpan={6} style={{ textAlign: "center", padding: "24px", color: "#6b7280" }}>Belum ada resep</td></tr>
+                  ) : rows.map((r: any, idx: number) => (
+                    <tr key={r.id}>
+                      <td style={{ color: "#6b7280", fontSize: 12 }}>{(meta.page - 1) * meta.limit + idx + 1}</td>
+                      <td style={{ fontWeight: 600 }}>{r.menu_name}</td>
+                      <td><Badge color="blue">{r.product_name || "-"}</Badge></td>
+                      <td style={{ fontSize: 12, color: "#6b7280", maxWidth: 200 }}>{r.ingredients}</td>
+                      <td style={{ fontWeight: 700, color: C.primary }}>{fmt(r.standard_cost)}</td>
+                      <td>
+                        <button className="btn btn-secondary btn-sm" onClick={() => openEdit(r)}><Edit2 size={11} /></button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            <Pagination 
+              page={meta.page} totalPages={meta.totalPages} total={meta.total} limit={meta.limit} 
+              onChange={(p) => fetchRecipes(p, meta.limit)} 
+              onLimitChange={(lim) => fetchRecipes(1, lim)}
+            />
+          </>
+        )}
       </div>
+
+      <Modal show={showModal} onClose={() => setShowModal(false)} title={editItem ? "Edit Resep" : "Tambah Resep Menu"}>
+        <FormField label="Nama Menu" style={{ marginBottom: 14 }}>
+          <input value={form.menu_name} onChange={(e) => setForm((f) => ({ ...f, menu_name: e.target.value }))} placeholder="Contoh: Rendang Daging Sapi" />
+        </FormField>
+        <FormField label="Produk (Paket)" style={{ marginBottom: 14 }}>
+          <select value={form.product_id} onChange={(e) => setForm((f) => ({ ...f, product_id: e.target.value }))}>
+            <option value="">-- Pilih Produk --</option>
+            {products.map((p: any) => <option key={p.id} value={p.id}>{p.name}</option>)}
+          </select>
+        </FormField>
+        <FormField label="Bahan-Bahan" style={{ marginBottom: 14 }}>
+          <textarea rows={3} value={form.ingredients} onChange={(e) => setForm((f) => ({ ...f, ingredients: e.target.value }))} placeholder="Daging Sapi 200gr, Bumbu Rendang, Kelapa..." />
+        </FormField>
+        <FormField label="HPP Standar per Porsi (Rp)" style={{ marginBottom: 14 }}>
+          <input type="number" value={form.standard_cost} onChange={(e) => setForm((f) => ({ ...f, standard_cost: e.target.value }))} placeholder="25000" />
+        </FormField>
+        <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
+          <button className="btn btn-secondary" onClick={() => setShowModal(false)}>Batal</button>
+          <button className="btn btn-primary" onClick={handleSave}>{editItem ? "Simpan Perubahan" : "Simpan Resep"}</button>
+        </div>
+      </Modal>
     </div>
   );
 }

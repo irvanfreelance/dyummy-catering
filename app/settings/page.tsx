@@ -1,226 +1,132 @@
 "use client";
-import React, { useState, useEffect } from 'react';
-import { Plus, Edit, Trash2, Search, CheckCircle, XCircle } from 'lucide-react';
-import Pagination from '@/components/ui/Pagination';
+
+import { useEffect, useState } from "react";
+import { Plus, Edit2, Lock, UserPlus } from "lucide-react";
+import { Badge } from "@/components/ui/Badge";
+import { Modal } from "@/components/ui/Modal";
+import { PageHeader, FormRow, FormField } from "@/components/ui/PageHeader";
+import { statusBadgeColor, roleColor } from "@/lib/utils";
+
+const C = { primary: "#1D9E75" };
+
+const EMPTY_FORM = { name: "", email: "", role: "CS / Sales", status: "Aktif", password: "" };
 
 export default function SettingsPage() {
   const [users, setUsers] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [showForm, setShowForm] = useState(false);
-  const [formData, setFormData] = useState({ id: '', name: '', email: '', password: '', role: 'CS / Sales', status: 'Aktif' });
-  const [isEditing, setIsEditing] = useState(false);
+  const [showModal, setShowModal] = useState(false);
+  const [editItem, setEditItem] = useState<any>(null);
+  const [form, setForm] = useState(EMPTY_FORM);
 
-  // Filter & Pagination States
-  const [searchQuery, setSearchQuery] = useState('');
-  const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 10;
+  const fetchUsers = () =>
+    fetch("/api/users").then((r) => r.json()).then(setUsers);
 
-  const fetchData = () => {
-    setLoading(true);
-    fetch('/api/users/get-list')
-      .then(r => r.json())
-      .then(data => {
-        setUsers(data);
-        setLoading(false);
-      })
-      .catch(err => {
-        console.error(err);
-        setLoading(false);
-      });
+  useEffect(() => { fetchUsers(); }, []);
+
+  const openAdd = () => { setEditItem(null); setForm(EMPTY_FORM); setShowModal(true); };
+  const openEdit = (u: any) => {
+    setEditItem(u);
+    setForm({ name: u.name, email: u.email, role: u.role, status: u.status, password: "" });
+    setShowModal(true);
   };
 
-  useEffect(() => {
-    fetchData();
-  }, []);
-
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [searchQuery]);
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    const endpoint = isEditing ? '/api/users/update' : '/api/users/create';
-    const method = isEditing ? 'PUT' : 'POST';
-
-    try {
-      const res = await fetch(endpoint, {
-        method,
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData)
-      });
-      if (res.ok) {
-        setShowForm(false);
-        fetchData();
-      } else {
-        const err = await res.json();
-        alert('Gagal: ' + (err.message || 'Unknown error'));
-      }
-    } catch (err) {
-      console.error(err);
-    }
+  const handleSave = async () => {
+    if (!form.name || !form.email || !form.role) return alert("Nama, email, role wajib diisi");
+    const url = editItem ? `/api/users/${editItem.id}` : "/api/users";
+    const method = editItem ? "PUT" : "POST";
+    const body = editItem ? { name: form.name, email: form.email, role: form.role, status: form.status } : form;
+    const res = await fetch(url, {
+      method, headers: { "Content-Type": "application/json" }, body: JSON.stringify(body),
+    });
+    if (res.ok) { setShowModal(false); fetchUsers(); }
+    else { const d = await res.json(); alert(d.error || "Gagal simpan"); }
   };
 
-  const handleEdit = (user: any) => {
-    setFormData({ ...user, password: '' });
-    setIsEditing(true);
-    setShowForm(true);
+  const handleDeactivate = async (id: string) => {
+    if (!confirm("Nonaktifkan user ini?")) return;
+    await fetch(`/api/users/${id}`, { method: "DELETE" });
+    fetchUsers();
   };
-
-  const handleDelete = async (id: number) => {
-    if (!confirm('Apakah anda yakin ingin menghapus user ini?')) return;
-    try {
-      const res = await fetch('/api/users/delete', {
-        method: 'DELETE',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id })
-      });
-      if (res.ok) {
-        fetchData();
-      } else {
-        const err = await res.json();
-        alert('Gagal: ' + (err.message || 'Unknown error'));
-      }
-    } catch (err) {
-      console.error(err);
-    }
-  };
-
-  // Filter Logic
-  const filteredUsers = users.filter(u => {
-    const s = searchQuery.toLowerCase();
-    return (u.name && u.name.toLowerCase().includes(s)) || (u.email && u.email.toLowerCase().includes(s));
-  });
-
-  // Pagination Logic
-  const totalPages = Math.ceil(filteredUsers.length / itemsPerPage);
-  const currentItems = filteredUsers.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
-
-  if (showForm) {
-    return (
-      <div className="bg-white rounded-2xl shadow-sm border border-slate-100 max-w-3xl mx-auto p-6">
-        <div className="flex items-center mb-6 border-b border-slate-100 pb-4">
-           <button onClick={() => setShowForm(false)} className="mr-4 text-slate-400 hover:text-slate-800 transition-colors">&larr; Kembali</button>
-           <h2 className="text-lg font-semibold text-slate-800">{isEditing ? 'Edit Pengguna' : 'Tambah Pengguna Baru'}</h2>
-        </div>
-        <form className="space-y-4" onSubmit={handleSubmit}>
-           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                 <label className="text-sm font-medium text-slate-600 block mb-1">Nama Lengkap *</label>
-                 <input type="text" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} required className="w-full p-2 border border-slate-300 rounded-md text-sm outline-none focus:border-blue-400 transition-colors" />
-              </div>
-              <div>
-                 <label className="text-sm font-medium text-slate-600 block mb-1">Email *</label>
-                 <input type="email" value={formData.email} onChange={e => setFormData({...formData, email: e.target.value})} required className="w-full p-2 border border-slate-300 rounded-md text-sm outline-none focus:border-blue-400 transition-colors" />
-              </div>
-              <div>
-                 <label className="text-sm font-medium text-slate-600 block mb-1">Password {isEditing ? '(Kosongkan jika tidak diubah)' : '*'}</label>
-                 <input type="password" value={formData.password} onChange={e => setFormData({...formData, password: e.target.value})} required={!isEditing} className="w-full p-2 border border-slate-300 rounded-md text-sm outline-none focus:border-blue-400 transition-colors" />
-              </div>
-              <div>
-                 <label className="text-sm font-medium text-slate-600 block mb-1">Peran (Role) *</label>
-                 <select value={formData.role} onChange={e => setFormData({...formData, role: e.target.value})} className="w-full p-2 border border-slate-300 rounded-md text-sm outline-none focus:border-blue-400 transition-colors">
-                    <option value="Super Admin">Super Admin</option>
-                    <option value="Owner">Owner</option>
-                    <option value="CS / Sales">CS / Sales</option>
-                    <option value="Finance">Finance</option>
-                 </select>
-              </div>
-              <div>
-                 <label className="text-sm font-medium text-slate-600 block mb-1">Status *</label>
-                 <select value={formData.status} onChange={e => setFormData({...formData, status: e.target.value})} className="w-full p-2 border border-slate-300 rounded-md text-sm outline-none focus:border-blue-400 transition-colors">
-                    <option value="Aktif">Aktif</option>
-                    <option value="Nonaktif">Nonaktif</option>
-                 </select>
-              </div>
-           </div>
-           <div className="pt-4 flex justify-end space-x-3 border-t border-slate-100 mt-6">
-              <button type="button" onClick={() => setShowForm(false)} className="px-5 py-2 rounded-md text-slate-600 font-medium hover:bg-slate-100 transition-colors">Batal</button>
-              <button type="submit" className="px-5 py-2 rounded-md bg-blue-600 text-white font-medium hover:bg-blue-700 transition-colors shadow-sm">Simpan Pengguna</button>
-           </div>
-        </form>
-      </div>
-    );
-  }
 
   return (
-    <div className="space-y-4">
-      <div className="flex justify-between items-center">
-        <div>
-           <h2 className="text-xl font-semibold text-slate-800">Manajemen Pengguna</h2>
-           <p className="text-sm text-slate-500 mt-1">Kelola data user, hak akses (role), dan status akun.</p>
-        </div>
-        <button onClick={() => { setFormData({ id: '', name: '', email: '', password: '', role: 'CS / Sales', status: 'Aktif' }); setIsEditing(false); setShowForm(true); }} className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md text-sm font-medium transition-colors shadow-sm flex items-center">
-          <Plus className="w-4 h-4 mr-2" /> Tambah User
-        </button>
-      </div>
+    <div>
+      <PageHeader
+        title="Manajemen Pengguna"
+        subtitle="Kelola akun & role semua pengguna sistem"
+        actions={
+          <button className="btn btn-primary" onClick={openAdd}><UserPlus size={14} /> Tambah User</button>
+        }
+      />
 
-      <div className="bg-white p-5 rounded-2xl shadow-sm border border-slate-100">
-        <div className="flex flex-wrap gap-4 items-center">
-          <div className="relative">
-            <Search className="w-4 h-4 absolute left-3 top-2.5 text-slate-400" />
-            <input 
-              type="text" 
-              placeholder="Cari nama atau email..." 
-              value={searchQuery}
-              onChange={e => setSearchQuery(e.target.value)}
-              className="pl-9 pr-4 py-2 border border-slate-300 rounded-md text-sm w-64 outline-none focus:border-blue-500 transition-colors" 
-            />
-          </div>
-        </div>
-      </div>
-
-      <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse whitespace-nowrap">
+      <div className="erp-card-flush">
+        <div style={{ overflowX: "auto" }}>
+          <table>
             <thead>
-              <tr className="bg-slate-50 border-b border-slate-200 text-xs uppercase tracking-wider text-slate-500">
-                <th className="p-4 font-medium pl-6 w-16">No.</th>
-                <th className="p-4 font-medium">Nama Lengkap</th>
-                <th className="p-4 font-medium">Email</th>
-                <th className="p-4 font-medium">Role</th>
-                <th className="p-4 font-medium">Status</th>
-                <th className="p-4 font-medium text-center">Aksi</th>
-              </tr>
+              <tr><th>Nama</th><th>Email</th><th>Role</th><th>Status</th><th>Bergabung</th><th>Aksi</th></tr>
             </thead>
-            <tbody className="text-sm text-slate-700">
-              {loading ? (
-                 <tr><td colSpan={6} className="text-center p-4">Loading...</td></tr>
-              ) : currentItems.length === 0 ? (
-                 <tr><td colSpan={6} className="text-center p-4">Tidak ada data.</td></tr>
-              ) : currentItems.map((u, idx) => (
-                <tr key={u.id} className="border-b border-slate-100 hover:bg-slate-50/80 transition-colors">
-                  <td className="p-4 pl-6 text-slate-500">{(currentPage - 1) * itemsPerPage + idx + 1}</td>
-                  <td className="p-4 font-medium text-slate-800">{u.name}</td>
-                  <td className="p-4 text-slate-600">{u.email}</td>
-                  <td className="p-4">
-                     <span className="bg-slate-100 text-slate-700 px-2.5 py-1 rounded-md text-xs font-medium">
-                       {u.role}
-                     </span>
+            <tbody>
+              {users.length === 0 ? (
+                <tr><td colSpan={6} style={{ textAlign: "center", padding: "24px", color: "#6b7280" }}>Memuat data...</td></tr>
+              ) : users.map((u: any) => (
+                <tr key={u.id}>
+                  <td>
+                    <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                      <div style={{
+                        width: 32, height: 32, borderRadius: "50%",
+                        background: C.primary + "20",
+                        display: "flex", alignItems: "center", justifyContent: "center",
+                        fontSize: 11, fontWeight: 700, color: C.primary,
+                      }}>
+                        {u.name.split(" ").map((n: string) => n[0]).slice(0, 2).join("").toUpperCase()}
+                      </div>
+                      <p style={{ fontWeight: 500 }}>{u.name}</p>
+                    </div>
                   </td>
-                  <td className="p-4">
-                     {u.status === 'Aktif' ? (
-                        <span className="text-emerald-600 flex items-center font-medium text-xs"><CheckCircle className="w-3.5 h-3.5 mr-1" /> Aktif</span>
-                     ) : (
-                        <span className="text-rose-600 flex items-center font-medium text-xs"><XCircle className="w-3.5 h-3.5 mr-1" /> Nonaktif</span>
-                     )}
-                  </td>
-                  <td className="p-4 flex justify-center space-x-2">
-                    <button onClick={() => handleEdit(u)} className="text-slate-400 hover:text-amber-500 p-1.5 transition-colors" title="Edit"><Edit className="w-4 h-4" /></button>
-                    <button onClick={() => handleDelete(u.id)} className="text-slate-400 hover:text-rose-500 p-1.5 transition-colors" title="Hapus"><Trash2 className="w-4 h-4" /></button>
+                  <td style={{ fontSize: 12, fontFamily: "monospace" }}>{u.email}</td>
+                  <td><Badge color={roleColor(u.role)}>{u.role}</Badge></td>
+                  <td><Badge color={statusBadgeColor(u.status)}>{u.status}</Badge></td>
+                  <td style={{ fontSize: 12, color: "#6b7280" }}>{u.created_at?.slice(0, 10)}</td>
+                  <td>
+                    <div style={{ display: "flex", gap: 4 }}>
+                      <button className="btn btn-secondary btn-sm" onClick={() => openEdit(u)}><Edit2 size={11} /></button>
+                      <button className="btn btn-secondary btn-sm" onClick={() => handleDeactivate(u.id)} title="Nonaktifkan">
+                        <Lock size={11} />
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))}
             </tbody>
           </table>
         </div>
-        <Pagination 
-          currentPage={currentPage}
-          totalPages={totalPages}
-          onPageChange={setCurrentPage}
-          totalItems={filteredUsers.length}
-          itemsPerPage={itemsPerPage}
-        />
       </div>
+
+      <Modal show={showModal} onClose={() => setShowModal(false)} title={editItem ? "Edit User" : "Tambah User Baru"}>
+        <FormRow>
+          <FormField label="Nama Lengkap"><input value={form.name} onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))} placeholder="Nama pengguna" /></FormField>
+          <FormField label="Email"><input type="email" value={form.email} onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))} placeholder="email@catering.com" /></FormField>
+        </FormRow>
+        <FormRow>
+          <FormField label="Role">
+            <select value={form.role} onChange={(e) => setForm((f) => ({ ...f, role: e.target.value }))}>
+              <option>CS / Sales</option><option>Kitchen</option><option>Purchasing</option>
+              <option>Finance</option><option>Super Admin</option>
+            </select>
+          </FormField>
+          {editItem ? (
+            <FormField label="Status">
+              <select value={form.status} onChange={(e) => setForm((f) => ({ ...f, status: e.target.value }))}>
+                <option>Aktif</option><option>Nonaktif</option>
+              </select>
+            </FormField>
+          ) : (
+            <FormField label="Password Awal"><input type="password" value={form.password} onChange={(e) => setForm((f) => ({ ...f, password: e.target.value }))} placeholder="Min. 8 karakter" /></FormField>
+          )}
+        </FormRow>
+        <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
+          <button className="btn btn-secondary" onClick={() => setShowModal(false)}>Batal</button>
+          <button className="btn btn-primary" onClick={handleSave}>{editItem ? "Simpan Perubahan" : "Buat Akun"}</button>
+        </div>
+      </Modal>
     </div>
   );
 }

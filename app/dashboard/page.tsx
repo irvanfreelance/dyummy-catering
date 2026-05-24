@@ -1,157 +1,330 @@
 "use client";
-import React, { useState, useEffect } from 'react';
-import { LineChart, Line, BarChart, Bar, PieChart, Pie, Cell, RadialBarChart, RadialBar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
-import { TrendingUp, AlertTriangle, CheckCircle } from 'lucide-react';
 
-const financialDataMock = [
-  { month: 'Jan', omset: 120, biaya: 80, margin: 40 },
-  { month: 'Feb', omset: 150, biaya: 95, margin: 55 },
-  { month: 'Mar', omset: 180, biaya: 110, margin: 70 },
-  { month: 'Apr', omset: 140, biaya: 100, margin: 40 },
-  { month: 'Mei', omset: 210, biaya: 130, margin: 80 },
-  { month: 'Jun', omset: 250, biaya: 145, margin: 105 },
+import { useEffect, useState } from "react";
+import {
+  BarChart, Bar, LineChart, Line, AreaChart, Area,
+  XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
+} from "recharts";
+import {
+  TrendingUp, DollarSign, Inbox, ShoppingCart,
+  AlertTriangle, CheckCircle, ShieldAlert, Package,
+} from "lucide-react";
+import { StatCard } from "@/components/ui/StatCard";
+import { fmt, fmtShort } from "@/lib/utils";
+
+const C = {
+  primary: "#1D9E75",
+  secondary: "#378ADD",
+  coral: "#D85A30",
+  warning: "#BA7517",
+  danger: "#E24B4A",
+  purple: "#7F77DD",
+};
+
+// Fallback chart data saat DB kosong
+const DEMO_CHART = [
+  { date: "18 Mei", revenue: 7500000, bpp: 3200000, overhead: 500000, grossProfit: 3800000, margin: 50.7 },
+  { date: "19 Mei", revenue: 12000000, bpp: 5500000, overhead: 800000, grossProfit: 5700000, margin: 47.5 },
+  { date: "20 Mei", revenue: 5000000, bpp: 2400000, overhead: 400000, grossProfit: 2200000, margin: 44.0 },
+  { date: "21 Mei", revenue: 9800000, bpp: 4100000, overhead: 600000, grossProfit: 5100000, margin: 52.0 },
+  { date: "22 Mei", revenue: 15000000, bpp: 6800000, overhead: 900000, grossProfit: 7300000, margin: 48.7 },
+  { date: "23 Mei", revenue: 8500000, bpp: 3900000, overhead: 550000, grossProfit: 4050000, margin: 47.6 },
+  { date: "24 Mei", revenue: 11200000, bpp: 5200000, overhead: 700000, grossProfit: 5300000, margin: 47.3 },
 ];
 
-const pieColors = ['#3b82f6', '#10b981', '#f59e0b', '#6366f1'];
-
 export default function DashboardPage() {
-  const [stats, setStats] = useState<any>(null);
+  const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
 
   useEffect(() => {
-    fetch('/api/dashboard/get-stats')
-      .then(res => res.json())
-      .then(data => {
-        setStats(data);
+    fetch("/api/dashboard/summary")
+      .then((r) => r.json())
+      .then((d) => {
+        setData(d);
         setLoading(false);
       })
-      .catch(err => {
-        console.error(err);
+      .catch(() => {
+        setError(true);
         setLoading(false);
       });
   }, []);
 
-  if (loading) return <div className="p-10 text-center">Loading dashboard...</div>;
-  if (!stats) return <div className="p-10 text-center text-rose-500">Failed to load data</div>;
+  const activeOrders = data?.activeOrders ?? 0;
+  const totalRevenue = data?.totalRevenue ?? 0;
+  const totalLeadsToday = data?.totalLeadsToday ?? 0;
+  const closingToday = data?.closingToday ?? 0;
+  const followUp = data?.followUp ?? 0;
+  const scheduleAlerts = data?.scheduleAlerts ?? [];
+  const poAlerts = data?.poAlerts ?? [];
 
-  const { financial, crm } = stats;
+  // Gunakan data DB jika ada, fallback ke demo
+  const rawChart = data?.plChart ?? [];
+  const chartData = rawChart.length > 0
+    ? rawChart.map((r: any) => ({
+        date: r.date,
+        revenue: Number(r.revenue),
+        bpp: Number(r.bpp),
+        overhead: Number(r.overhead),
+        grossProfit: Number(r.gross_profit ?? (Number(r.revenue) - Number(r.bpp) - Number(r.overhead))),
+        margin: Number(r.margin ?? 0),
+      }))
+    : DEMO_CHART;
 
-  const targetAchievementData = [
-    { name: 'Target', value: 100, fill: '#f1f5f9' }, 
-    { name: 'Omset', value: (financial.totalOmset / 1200000000) * 100, fill: '#3b82f6' }    
-  ];
+  const isDemo = rawChart.length === 0 && !loading;
 
-  const formatRp = (num: number) => {
-    return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(num);
-  };
+  if (loading) return <LoadingSkeleton />;
 
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h2 className="text-xl font-semibold text-slate-800">Financial & CRM Target Overview</h2>
-        <div className="bg-emerald-50 text-emerald-700 px-4 py-2 rounded-lg font-medium text-sm flex items-center border border-emerald-200">
-          <CheckCircle className="w-4 h-4 mr-2" />
-          Status Bisnis: Sehat (Margin {financial.netMargin}%)
-        </div>
+    <div>
+      {/* Page Header */}
+      <div style={{ marginBottom: 20 }}>
+        <h1 style={{ fontSize: 22, fontWeight: 800, color: "#1a1a1a", margin: 0, letterSpacing: "-0.02em" }}>
+          Dashboard Utama
+        </h1>
+        <p style={{ fontSize: 13, color: "#6b7280", marginTop: 3 }}>
+          {new Date().toLocaleDateString("id-ID", { weekday: "long", year: "numeric", month: "long", day: "numeric" })}
+          {isDemo && (
+            <span style={{ marginLeft: 10, background: "#FAEEDA", color: "#854F0B", padding: "2px 8px", borderRadius: 10, fontSize: 11, fontWeight: 600 }}>
+              Demo Data — Tambahkan data real untuk update chart
+            </span>
+          )}
+        </p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <div className="bg-white p-5 rounded-2xl shadow-sm border border-slate-100">
-          <span className="text-slate-500 text-xs font-semibold uppercase tracking-wider mb-1 block">Total Omset (YTD)</span>
-          <span className="text-2xl font-semibold text-slate-800">{formatRp(financial.totalOmset)}</span>
-          <span className="text-emerald-600 text-xs font-medium mt-2 flex items-center"><TrendingUp className="w-3 h-3 mr-1"/> Live Data</span>
-        </div>
-        <div className="bg-white p-5 rounded-2xl shadow-sm border border-slate-100">
-          <span className="text-slate-500 text-xs font-semibold uppercase tracking-wider mb-1 block">Total Biaya (Actual Cost)</span>
-          <span className="text-2xl font-semibold text-rose-600">{formatRp(financial.totalBiaya)}</span>
-          <span className="text-rose-500 text-xs font-medium mt-2 flex items-center"><AlertTriangle className="w-3 h-3 mr-1"/> Monitor Cost</span>
-        </div>
-        <div className="bg-white p-5 rounded-2xl shadow-sm border border-slate-100">
-          <span className="text-slate-500 text-xs font-semibold uppercase tracking-wider mb-1 block">Net Margin</span>
-          <span className="text-2xl font-semibold text-emerald-600">{financial.netMargin}%</span>
-          <span className="text-slate-500 text-xs font-medium mt-2 block">Target minimal: 30%</span>
-        </div>
-        <div className="bg-white p-5 rounded-2xl shadow-sm border border-slate-100">
-          <span className="text-slate-500 text-xs font-semibold uppercase tracking-wider mb-1 block">Avg Closing Rate</span>
-          <span className="text-2xl font-semibold text-blue-600">{crm.avgClosingRate}%</span>
-          <span className="text-blue-600 text-xs font-medium mt-2 flex items-center">SLA Target ({'>'}30%)</span>
-        </div>
+      {/* KPI Cards */}
+      <div style={{
+        display: "grid",
+        gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
+        gap: 12,
+        marginBottom: 20,
+      }}>
+        <StatCard
+          label="Revenue 30 Hari"
+          value={totalRevenue > 0 ? fmtShort(totalRevenue) : "Rp 0"}
+          sub="dari orders terkirim"
+          icon={TrendingUp}
+          color={C.primary}
+        />
+        <StatCard
+          label="Lead Masuk Hari Ini"
+          value={totalLeadsToday}
+          sub={`${closingToday} closing hari ini`}
+          icon={Inbox}
+          color={C.purple}
+        />
+        <StatCard
+          label="Perlu Follow Up"
+          value={followUp}
+          sub="Status Follow Up"
+          icon={ShoppingCart}
+          color={C.warning}
+        />
+        <StatCard
+          label="Order Aktif"
+          value={activeOrders}
+          sub="Belum selesai"
+          icon={Package}
+          color={C.secondary}
+        />
       </div>
 
-      {/* 4 Charts Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        
-        {/* Line Chart */}
-        <div className="bg-white p-5 rounded-2xl shadow-sm border border-slate-100">
-          <h3 className="text-base font-semibold text-slate-800 mb-4">Tren Omset vs Biaya vs Margin (Simulasi)</h3>
-          <div className="h-72 w-full text-sm">
-            <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={financialDataMock}>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
-                <XAxis dataKey="month" axisLine={false} tickLine={false} />
-                <YAxis axisLine={false} tickLine={false} />
-                <Tooltip contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }} />
-                <Legend />
-                <Line type="monotone" dataKey="omset" name="Omset" stroke="#3b82f6" strokeWidth={2} dot={{ r: 4 }} />
-                <Line type="monotone" dataKey="biaya" name="Biaya" stroke="#f43f5e" strokeWidth={2} dot={{ r: 4 }} />
-                <Line type="monotone" dataKey="margin" name="Margin" stroke="#10b981" strokeWidth={2} strokeDasharray="5 5" />
-              </LineChart>
-            </ResponsiveContainer>
+      {/* Charts Row */}
+      <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr", gap: 16, marginBottom: 16 }}>
+        {/* Bar Chart — Revenue vs BPP */}
+        <div className="erp-card">
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
+            <p style={{ fontSize: 13, fontWeight: 700, color: "#1a1a1a" }}>Revenue vs BPP vs Laba Kotor (7 Hari)</p>
+            {isDemo && <span style={{ fontSize: 10, color: "#6b7280" }}>*contoh data</span>}
           </div>
+          <ResponsiveContainer width="100%" height={230}>
+            <BarChart data={chartData} barCategoryGap="30%" barGap={3}>
+              <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" vertical={false} />
+              <XAxis
+                dataKey="date"
+                tick={{ fontSize: 11, fill: "#9ca3af" }}
+                axisLine={false}
+                tickLine={false}
+              />
+              <YAxis
+                tickFormatter={(v) => (v / 1_000_000).toFixed(1) + "Jt"}
+                tick={{ fontSize: 11, fill: "#9ca3af" }}
+                axisLine={false}
+                tickLine={false}
+                width={40}
+              />
+              <Tooltip
+                formatter={(v: any, name: any) => [fmt(Number(v)), String(name ?? "")]}
+                contentStyle={{ borderRadius: 8, border: "1px solid #e5e7eb", fontSize: 12 }}
+              />
+              <Legend
+                wrapperStyle={{ fontSize: 11, paddingTop: 8 }}
+                iconType="circle"
+                iconSize={8}
+              />
+              <Bar dataKey="revenue" name="Revenue" fill={C.primary} radius={[4, 4, 0, 0]} />
+              <Bar dataKey="bpp" name="BPP Aktual" fill={C.coral} radius={[4, 4, 0, 0]} />
+              <Bar dataKey="grossProfit" name="Laba Kotor" fill={C.secondary} radius={[4, 4, 0, 0]} />
+            </BarChart>
+          </ResponsiveContainer>
         </div>
 
-        {/* Vertical Bar Chart */}
-        <div className="bg-white p-5 rounded-2xl shadow-sm border border-slate-100">
-          <h3 className="text-base font-semibold text-slate-800 mb-4">Performa CS (Closing Rate %)</h3>
-          <div className="h-72 w-full text-sm">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={crm.csPerformanceData} layout="vertical" margin={{ left: 20, right: 20 }}>
-                <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#e2e8f0" />
-                <XAxis type="number" domain={[0, 100]} hide />
-                <YAxis dataKey="name" type="category" axisLine={false} tickLine={false} width={80} />
-                <Tooltip cursor={{fill: '#f8fafc'}} />
-                <Legend />
-                <Bar dataKey="closingRate" name="Closing Rate" fill="#3b82f6" radius={[0, 4, 4, 0]} barSize={16} />
-                <Bar dataKey="target" name="Target (30%)" fill="#cbd5e1" radius={[0, 4, 4, 0]} barSize={8} />
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-        </div>
-
-        {/* Pie Chart */}
-        <div className="bg-white p-5 rounded-2xl shadow-sm border border-slate-100 flex flex-col justify-between">
-          <h3 className="text-base font-semibold text-slate-800 mb-2">Sumber Leads (Volume)</h3>
-          <div className="h-64 w-full">
-            <ResponsiveContainer width="100%" height="100%">
-              <PieChart>
-                <Pie data={crm.leadSources} cx="50%" cy="50%" innerRadius={60} outerRadius={90} paddingAngle={2} dataKey="value" label>
-                  {crm.leadSources.map((entry: any, index: number) => (
-                    <Cell key={`cell-${index}`} fill={pieColors[index % pieColors.length]} />
-                  ))}
-                </Pie>
-                <Tooltip />
-                <Legend verticalAlign="bottom" height={36}/>
-              </PieChart>
-            </ResponsiveContainer>
-          </div>
-        </div>
-
-        {/* Gauge Chart (RadialBar) */}
-        <div className="bg-white p-5 rounded-2xl shadow-sm border border-slate-100 flex flex-col justify-between">
-          <h3 className="text-base font-semibold text-slate-800 mb-2">Pencapaian Target Omset Tahunan</h3>
-          <div className="h-64 w-full flex items-center justify-center relative">
-            <ResponsiveContainer width="100%" height="100%">
-              <RadialBarChart cx="50%" cy="50%" innerRadius="70%" outerRadius="100%" barSize={24} data={targetAchievementData} startAngle={180} endAngle={0}>
-                <RadialBar background dataKey="value" cornerRadius={10} />
-              </RadialBarChart>
-            </ResponsiveContainer>
-            <div className="absolute flex flex-col items-center justify-center mt-12">
-              <span className="text-4xl font-semibold text-blue-600">{Math.round((financial.totalOmset / 1200000000) * 100)}%</span>
-              <span className="text-sm text-slate-500 mt-1">{formatRp(financial.totalOmset)} / Rp 1.2M</span>
+        {/* Line Chart — Margin */}
+        <div className="erp-card">
+          <p style={{ fontSize: 13, fontWeight: 700, color: "#1a1a1a", marginBottom: 14 }}>Margin Laba (%) Harian</p>
+          <div style={{ display: "flex", gap: 12, marginBottom: 12 }}>
+            <div style={{ flex: 1, background: C.primary + "15", borderRadius: 8, padding: "8px 12px", textAlign: "center" }}>
+              <p style={{ fontSize: 10, color: C.primary, fontWeight: 600, marginBottom: 2 }}>RATA-RATA</p>
+              <p style={{ fontSize: 18, fontWeight: 800, color: C.primary }}>
+                {(chartData.reduce((s: number, d: any) => s + d.margin, 0) / chartData.length).toFixed(1)}%
+              </p>
+            </div>
+            <div style={{ flex: 1, background: "#f9fafb", borderRadius: 8, padding: "8px 12px", textAlign: "center" }}>
+              <p style={{ fontSize: 10, color: "#6b7280", fontWeight: 600, marginBottom: 2 }}>TARGET</p>
+              <p style={{ fontSize: 18, fontWeight: 800, color: "#6b7280" }}>40%</p>
             </div>
           </div>
+          <ResponsiveContainer width="100%" height={155}>
+            <AreaChart data={chartData}>
+              <defs>
+                <linearGradient id="marginGrad" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%" stopColor={C.primary} stopOpacity={0.15} />
+                  <stop offset="95%" stopColor={C.primary} stopOpacity={0} />
+                </linearGradient>
+              </defs>
+              <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" vertical={false} />
+              <XAxis dataKey="date" tick={{ fontSize: 10, fill: "#9ca3af" }} axisLine={false} tickLine={false} />
+              <YAxis
+                domain={[0, 100]}
+                tickFormatter={(v) => v + "%"}
+                tick={{ fontSize: 10, fill: "#9ca3af" }}
+                axisLine={false}
+                tickLine={false}
+                width={30}
+              />
+              <Tooltip formatter={(v: any) => [Number(v).toFixed(1) + "%", "Margin"]} contentStyle={{ borderRadius: 8, border: "1px solid #e5e7eb", fontSize: 12 }} />
+              {/* Target line */}
+              <Area type="monotone" dataKey={() => 40} stroke="#e5e7eb" fill="none" strokeDasharray="4 3" strokeWidth={1} legendType="none" />
+              <Area
+                type="monotone"
+                dataKey="margin"
+                name="Margin %"
+                stroke={C.primary}
+                fill="url(#marginGrad)"
+                strokeWidth={2.5}
+                dot={{ r: 4, fill: C.primary, strokeWidth: 0 }}
+                activeDot={{ r: 6 }}
+              />
+            </AreaChart>
+          </ResponsiveContainer>
+        </div>
+      </div>
+
+      {/* Summary Row + Alerts */}
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+        {/* Summary Stats */}
+        <div className="erp-card">
+          <p style={{ fontSize: 13, fontWeight: 700, marginBottom: 14 }}>Ringkasan 7 Hari</p>
+          {[
+            { label: "Total Revenue", value: fmtShort(chartData.reduce((s: number, d: any) => s + d.revenue, 0)), color: C.primary },
+            { label: "Total BPP Aktual", value: fmtShort(chartData.reduce((s: number, d: any) => s + d.bpp, 0)), color: C.coral },
+            { label: "Total Overhead", value: fmtShort(chartData.reduce((s: number, d: any) => s + d.overhead, 0)), color: C.warning },
+            { label: "Laba Kotor", value: fmtShort(chartData.reduce((s: number, d: any) => s + d.grossProfit, 0)), color: C.secondary },
+          ].map((item) => (
+            <div key={item.label} style={{
+              display: "flex", justifyContent: "space-between", alignItems: "center",
+              padding: "9px 0", borderBottom: "0.5px solid #f3f4f6",
+            }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                <div style={{ width: 8, height: 8, borderRadius: "50%", background: item.color, flexShrink: 0 }} />
+                <p style={{ fontSize: 13, color: "#374151" }}>{item.label}</p>
+              </div>
+              <p style={{ fontSize: 14, fontWeight: 700, color: item.color }}>{item.value}</p>
+            </div>
+          ))}
         </div>
 
+        {/* System Alerts */}
+        <div className="erp-card">
+          <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 14 }}>
+            <ShieldAlert size={16} color={scheduleAlerts.length + poAlerts.length > 0 ? C.danger : C.primary} />
+            <p style={{ fontSize: 13, fontWeight: 700 }}>Peringatan Sistem</p>
+            {scheduleAlerts.length + poAlerts.length > 0 && (
+              <span style={{ background: C.danger, color: "white", padding: "1px 7px", borderRadius: 10, fontSize: 11, fontWeight: 700 }}>
+                {scheduleAlerts.length + poAlerts.length}
+              </span>
+            )}
+          </div>
+
+          <div style={{ display: "flex", flexDirection: "column", gap: 8, maxHeight: 260, overflowY: "auto" }}>
+            {scheduleAlerts.length === 0 && poAlerts.length === 0 ? (
+              <div className="alert-success">
+                <div style={{ display: "flex", gap: 8, alignItems: "flex-start" }}>
+                  <CheckCircle size={15} color="#0F6E56" style={{ flexShrink: 0, marginTop: 1 }} />
+                  <div>
+                    <p style={{ fontWeight: 700, color: "#0F6E56", fontSize: 12 }}>Semua sistem normal</p>
+                    <p style={{ fontSize: 11, color: "#0F6E56", marginTop: 2 }}>
+                      Tidak ada jadwal overbudget atau variance belanja.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            ) : null}
+
+            {scheduleAlerts.map((a: any) => (
+              <div key={a.id} className="alert-danger">
+                <div style={{ display: "flex", gap: 8, alignItems: "flex-start" }}>
+                  <AlertTriangle size={14} color="#A32D2D" style={{ flexShrink: 0, marginTop: 1 }} />
+                  <div>
+                    <p style={{ fontWeight: 700, color: "#A32D2D", fontSize: 12 }}>
+                      {a.status} — Jadwal {a.target_date}
+                    </p>
+                    <p style={{ fontSize: 11, color: "#A32D2D", marginTop: 2 }}>
+                      HPP {fmt(a.total_estimated_hpp)} melebihi budget {fmt(a.budget_limit)}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            ))}
+
+            {poAlerts.map((a: any) => (
+              <div key={a.id} className="alert-warning">
+                <div style={{ display: "flex", gap: 8, alignItems: "flex-start" }}>
+                  <DollarSign size={14} color="#854F0B" style={{ flexShrink: 0, marginTop: 1 }} />
+                  <div>
+                    <p style={{ fontWeight: 700, color: "#854F0B", fontSize: 12 }}>
+                      Overbudget — PO #{a.id}
+                    </p>
+                    <p style={{ fontSize: 11, color: "#854F0B", marginTop: 2 }}>
+                      {a.variance_notes || "Aktual melebihi estimasi PR Chef"}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function LoadingSkeleton() {
+  return (
+    <div>
+      <div className="skeleton" style={{ height: 52, marginBottom: 20, borderRadius: 10 }} />
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 12, marginBottom: 20 }}>
+        {[1, 2, 3, 4].map((i) => (
+          <div key={i} className="skeleton" style={{ height: 82, borderRadius: 12 }} />
+        ))}
+      </div>
+      <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr", gap: 16, marginBottom: 16 }}>
+        <div className="skeleton" style={{ height: 280, borderRadius: 12 }} />
+        <div className="skeleton" style={{ height: 280, borderRadius: 12 }} />
+      </div>
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+        <div className="skeleton" style={{ height: 200, borderRadius: 12 }} />
+        <div className="skeleton" style={{ height: 200, borderRadius: 12 }} />
       </div>
     </div>
   );

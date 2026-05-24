@@ -3,8 +3,8 @@ import "./globals.css";
 import MainLayout from "@/components/MainLayout";
 
 export const metadata: Metadata = {
-  title: "Catering Smart CRM",
-  description: "Catering CRM & Master Data System",
+  title: "Dyummy Catering ERP",
+  description: "ERP & CRM System untuk Dyummy Catering — Kelola leads, order, produksi, dan keuangan dalam satu platform.",
 };
 
 export default function RootLayout({
@@ -13,16 +13,16 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className="h-full antialiased">
+    <html lang="id" className="h-full">
       <head>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        <link href="https://fonts.googleapis.com/css2?family=Source+Sans+Pro:ital,wght@0,300;0,400;0,600;0,700;1,400&display=swap" rel="stylesheet" />
-        <style dangerouslySetInnerHTML={{__html: `
-          body, .font-sans { font-family: 'Source Sans Pro', sans-serif !important; }
-        `}} />
+        <link
+          href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@300;400;500;600;700&display=swap"
+          rel="stylesheet"
+        />
       </head>
-      <body className="min-h-full flex flex-col font-sans text-slate-800">
+      <body className="min-h-full font-sans">
         <MainLayout>{children}</MainLayout>
       </body>
     </html>

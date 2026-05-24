@@ -1,50 +1,62 @@
-import React from 'react';
+"use client";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 
-interface PaginationProps {
-  currentPage: number;
+interface Props {
+  page: number;
   totalPages: number;
-  onPageChange: (page: number) => void;
-  totalItems: number;
-  itemsPerPage: number;
+  total: number;
+  limit: number;
+  onChange: (page: number) => void;
+  onLimitChange?: (limit: number) => void;
 }
 
-export default function Pagination({ currentPage, totalPages, onPageChange, totalItems, itemsPerPage }: PaginationProps) {
-  if (totalPages <= 1) return null;
+export function Pagination({ page, totalPages, total, limit, onChange, onLimitChange }: Props) {
+  if (total === 0) return null;
+  const from = (page - 1) * limit + 1;
+  const to = Math.min(page * limit, total);
 
-  const startItem = (currentPage - 1) * itemsPerPage + 1;
-  const endItem = Math.min(currentPage * itemsPerPage, totalItems);
+  const pages: (number | "...")[] = [];
+  for (let i = 1; i <= totalPages; i++) {
+    if (i === 1 || i === totalPages || (i >= page - 1 && i <= page + 1)) pages.push(i);
+    else if (pages[pages.length - 1] !== "...") pages.push("...");
+  }
 
   return (
-    <div className="flex items-center justify-between px-4 py-3 border-t border-slate-200 sm:px-6">
-      <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
-        <div>
-          <p className="text-sm text-slate-700">
-            Menampilkan <span className="font-medium">{startItem}</span> hingga <span className="font-medium">{endItem}</span> dari <span className="font-medium">{totalItems}</span> hasil
-          </p>
-        </div>
-        <div>
-          <nav className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
-            <button
-              onClick={() => onPageChange(currentPage - 1)}
-              disabled={currentPage === 1}
-              className="relative inline-flex items-center px-2 py-2 rounded-l-md border border-slate-300 bg-white text-sm font-medium text-slate-500 hover:bg-slate-50 disabled:opacity-50"
+    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "10px 16px", borderTop: "0.5px solid #f3f4f6", flexWrap: "wrap", gap: 10 }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+        <p style={{ fontSize: 12, color: "#6b7280", margin: 0, whiteSpace: "nowrap" }}>Menampilkan {from}–{to} dari {total} data</p>
+        {onLimitChange && (
+          <div style={{ display: "flex", alignItems: "center", gap: 4, whiteSpace: "nowrap" }}>
+            <span style={{ fontSize: 12, color: "#6b7280", whiteSpace: "nowrap" }}>| Baris per hal:</span>
+            <select
+              value={limit}
+              onChange={(e) => onLimitChange(Number(e.target.value))}
+              style={{ fontSize: 12, padding: "2px 4px", border: "1px solid #d1d5db", borderRadius: 4, cursor: "pointer" }}
             >
-              <span className="sr-only">Previous</span>
-              &larr;
+              {[10, 20, 50, 100].map(val => (
+                <option key={val} value={val}>{val}</option>
+              ))}
+            </select>
+          </div>
+        )}
+      </div>
+      <div style={{ display: "flex", gap: 4 }}>
+        <button className="btn btn-secondary btn-sm" onClick={() => onChange(page - 1)} disabled={page === 1}>
+          <ChevronLeft size={12} />
+        </button>
+        {pages.map((p, i) =>
+          p === "..." ? (
+            <span key={i} style={{ padding: "4px 8px", fontSize: 12, color: "#9ca3af" }}>…</span>
+          ) : (
+            <button key={i} className="btn btn-sm" onClick={() => onChange(p as number)}
+              style={{ background: p === page ? "var(--primary)" : "white", color: p === page ? "white" : "#374151", border: "1px solid", borderColor: p === page ? "var(--primary)" : "#e5e7eb" }}>
+              {p}
             </button>
-            <span className="relative inline-flex items-center px-4 py-2 border border-slate-300 bg-white text-sm font-medium text-slate-700">
-              {currentPage} / {totalPages}
-            </span>
-            <button
-              onClick={() => onPageChange(currentPage + 1)}
-              disabled={currentPage === totalPages}
-              className="relative inline-flex items-center px-2 py-2 rounded-r-md border border-slate-300 bg-white text-sm font-medium text-slate-500 hover:bg-slate-50 disabled:opacity-50"
-            >
-              <span className="sr-only">Next</span>
-              &rarr;
-            </button>
-          </nav>
-        </div>
+          )
+        )}
+        <button className="btn btn-secondary btn-sm" onClick={() => onChange(page + 1)} disabled={page === totalPages}>
+          <ChevronRight size={12} />
+        </button>
       </div>
     </div>
   );

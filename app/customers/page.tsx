@@ -1,248 +1,186 @@
 "use client";
-import React, { useState, useEffect } from 'react';
-import { Search, Edit, Plus, Trash2 } from 'lucide-react';
-import Pagination from '@/components/ui/Pagination';
+
+import { useEffect, useState, useCallback } from "react";
+import { Users, Plus, Edit2, Download } from "lucide-react";
+import { StatCard } from "@/components/ui/StatCard";
+import { Badge } from "@/components/ui/Badge";
+import { Modal } from "@/components/ui/Modal";
+import { PageHeader, FormRow, FormField } from "@/components/ui/PageHeader";
+import { Pagination } from "@/components/ui/Pagination";
+import { exportToExcel } from "@/lib/export";
+
+const C = { primary: "#1D9E75" };
+
+const EMPTY_FORM = {
+  name: "", phone: "", email: "", type: "Perorangan", address: "", notes: "",
+};
 
 export default function CustomersPage() {
-  const [customers, setCustomers] = useState<any[]>([]);
+  const [rows, setRows] = useState<any[]>([]);
+  const [meta, setMeta] = useState({ total: 0, page: 1, limit: 10, totalPages: 1 });
+  const [search, setSearch] = useState("");
+  const [typeFilter, setTypeFilter] = useState("");
+  const [showModal, setShowModal] = useState(false);
+  const [editItem, setEditItem] = useState<any>(null);
+  const [form, setForm] = useState(EMPTY_FORM);
   const [loading, setLoading] = useState(true);
-  const [showForm, setShowForm] = useState(false);
-  const [formData, setFormData] = useState({ id: '', name: '', phone: '', email: '', type: 'Personal', address: '', notes: '' });
-  const [isEditing, setIsEditing] = useState(false);
 
-  // Filter & Pagination States
-  const [searchQuery, setSearchQuery] = useState('');
-  const [typeFilter, setTypeFilter] = useState('');
-  const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 10;
+  const buildQs = useCallback((page = 1, lim = meta.limit) => {
+    const p = new URLSearchParams({ page: String(page), limit: String(lim) });
+    if (search) p.set("search", search);
+    if (typeFilter) p.set("type", typeFilter);
+    return p.toString();
+  }, [search, typeFilter]);
 
-  const fetchCustomers = () => {
+  const fetchCustomers = useCallback((page = 1, lim = meta.limit) => {
     setLoading(true);
-    fetch('/api/customers/get-list')
-      .then(res => res.json())
-      .then(data => {
-        setCustomers(data);
-        setLoading(false);
-      })
-      .catch(err => {
-        console.error(err);
-        setLoading(false);
-      });
+    fetch(`/api/customers?${buildQs(page, lim)}`)
+      .then(r => r.json())
+      .then(d => { setRows(d.data || []); setMeta({ total: d.total, page: d.page, limit: d.limit, totalPages: d.totalPages }); })
+      .finally(() => setLoading(false));
+  }, [buildQs, meta.limit]);
+
+  useEffect(() => { fetchCustomers(1, meta.limit); }, [fetchCustomers]);
+
+  const openAdd = () => { setEditItem(null); setForm(EMPTY_FORM); setShowModal(true); };
+  const openEdit = (c: any) => {
+    setEditItem(c);
+    setForm({ name: c.name, phone: c.phone || "", email: c.email || "", type: c.type || "Perorangan", address: c.address || "", notes: c.notes || "" });
+    setShowModal(true);
   };
 
-  useEffect(() => {
-    fetchCustomers();
-  }, []);
-
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [searchQuery, typeFilter]);
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    const endpoint = isEditing ? '/api/customers/update' : '/api/customers/create';
-    const method = isEditing ? 'PUT' : 'POST';
-
-    try {
-      const res = await fetch(endpoint, {
-        method,
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData)
-      });
-      if (res.ok) {
-        setShowForm(false);
-        fetchCustomers();
-      } else {
-        const err = await res.json();
-        alert('Gagal: ' + (err.message || 'Unknown error'));
-      }
-    } catch (err) {
-      console.error(err);
-    }
-  };
-
-  const handleEdit = (cust: any) => {
-    setFormData({ 
-      id: cust.id, 
-      name: cust.name || '', 
-      phone: cust.phone || '', 
-      email: cust.email || '', 
-      type: cust.type || 'Personal', 
-      address: cust.address || '', 
-      notes: cust.notes || '' 
+  const handleSave = async () => {
+    if (!form.name) return alert("Nama wajib diisi");
+    const url = editItem ? `/api/customers/${editItem.id}` : "/api/customers";
+    const method = editItem ? "PUT" : "POST";
+    const res = await fetch(url, {
+      method, headers: { "Content-Type": "application/json" }, body: JSON.stringify(form),
     });
-    setIsEditing(true);
-    setShowForm(true);
+    if (res.ok) { setShowModal(false); fetchCustomers(meta.page); }
   };
 
-  const handleDelete = async (id: number) => {
-    if (!confirm('Apakah anda yakin ingin menghapus customer ini? Semua data leads dari customer ini juga akan terhapus.')) return;
-    try {
-      const res = await fetch('/api/customers/delete', {
-        method: 'DELETE',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id })
-      });
-      if (res.ok) {
-        fetchCustomers();
-      } else {
-        const err = await res.json();
-        alert('Gagal: ' + (err.message || 'Unknown error'));
-      }
-    } catch (err) {
-      console.error(err);
-    }
+  const corporateCount = rows.filter((c) => c.type === "Corporate").length;
+
+  const handleExport = async () => {
+    const p = new URLSearchParams({ page: "1", limit: "1000" });
+    if (search) p.set("search", search);
+    if (typeFilter) p.set("type", typeFilter);
+    const res = await fetch(`/api/customers?${p}`);
+    const d = await res.json();
+    exportToExcel(d.data || [], "Data_Customers");
   };
-
-  const getInitials = (name: string) => {
-    return name ? name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase() : '??';
-  };
-
-  // Filter Logic
-  const filteredCustomers = customers.filter(c => {
-    const searchLower = searchQuery.toLowerCase();
-    const matchesSearch = (c.name && c.name.toLowerCase().includes(searchLower)) || 
-                          (c.phone && c.phone.includes(searchLower));
-    const matchesType = typeFilter ? c.type === typeFilter : true;
-    return matchesSearch && matchesType;
-  });
-
-  // Pagination Logic
-  const totalPages = Math.ceil(filteredCustomers.length / itemsPerPage);
-  const currentItems = filteredCustomers.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
-
-  if (showForm) {
-    return (
-      <div className="bg-white rounded-2xl shadow-sm border border-slate-100 max-w-3xl mx-auto p-6">
-        <div className="flex items-center mb-6 border-b border-slate-100 pb-4">
-           <button onClick={() => setShowForm(false)} className="mr-4 text-slate-400 hover:text-slate-800">&larr; Kembali</button>
-           <h2 className="text-lg font-semibold text-slate-800">{isEditing ? 'Edit Customer' : 'Tambah Customer Baru'}</h2>
-        </div>
-        <form className="space-y-4" onSubmit={handleSubmit}>
-           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                 <label className="text-sm font-medium text-slate-600 block mb-1">Nama Customer *</label>
-                 <input type="text" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} required className="w-full p-2 border border-slate-300 rounded-md text-sm outline-none focus:border-blue-400" />
-              </div>
-              <div>
-                 <label className="text-sm font-medium text-slate-600 block mb-1">Nomor Telepon / WA *</label>
-                 <input type="text" value={formData.phone} onChange={e => setFormData({...formData, phone: e.target.value})} required className="w-full p-2 border border-slate-300 rounded-md text-sm outline-none focus:border-blue-400" />
-              </div>
-              <div>
-                 <label className="text-sm font-medium text-slate-600 block mb-1">Email</label>
-                 <input type="email" value={formData.email} onChange={e => setFormData({...formData, email: e.target.value})} className="w-full p-2 border border-slate-300 rounded-md text-sm outline-none focus:border-blue-400" />
-              </div>
-              <div>
-                 <label className="text-sm font-medium text-slate-600 block mb-1">Tipe Customer</label>
-                 <select value={formData.type} onChange={e => setFormData({...formData, type: e.target.value})} className="w-full p-2 border border-slate-300 rounded-md text-sm outline-none focus:border-blue-400">
-                    <option>Personal</option><option>Instansi</option><option>Corporate</option>
-                 </select>
-              </div>
-              <div className="md:col-span-2">
-                 <label className="text-sm font-medium text-slate-600 block mb-1">Alamat</label>
-                 <textarea rows={2} value={formData.address} onChange={e => setFormData({...formData, address: e.target.value})} className="w-full p-2 border border-slate-300 rounded-md text-sm outline-none focus:border-blue-400"></textarea>
-              </div>
-              <div className="md:col-span-2">
-                 <label className="text-sm font-medium text-slate-600 block mb-1">Catatan Khusus</label>
-                 <textarea rows={2} value={formData.notes} onChange={e => setFormData({...formData, notes: e.target.value})} className="w-full p-2 border border-slate-300 rounded-md text-sm outline-none focus:border-blue-400"></textarea>
-              </div>
-           </div>
-           <div className="pt-4 flex justify-end space-x-3 border-t border-slate-100 mt-6">
-              <button type="button" onClick={() => setShowForm(false)} className="px-5 py-2 rounded-md text-slate-600 font-medium hover:bg-slate-100 transition-colors">Batal</button>
-              <button type="submit" className="px-5 py-2 rounded-md bg-blue-600 text-white font-medium hover:bg-blue-700 transition-colors shadow-sm">Simpan</button>
-           </div>
-        </form>
-      </div>
-    );
-  }
 
   return (
-    <div className="space-y-4">
-      <div className="flex justify-between items-center">
-        <h2 className="text-xl font-semibold text-slate-800">Database Customers</h2>
-        <div className="flex space-x-2">
-          <button className="bg-slate-100 hover:bg-slate-200 text-slate-700 px-4 py-2 rounded-md text-sm font-medium transition-colors">Export CSV</button>
-          <button onClick={() => { setFormData({ id: '', name: '', phone: '', email: '', type: 'Personal', address: '', notes: '' }); setIsEditing(false); setShowForm(true); }} className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md text-sm font-medium transition-colors flex items-center">
-            <Plus className="w-4 h-4 mr-2" /> Tambah Customer
-          </button>
-        </div>
-      </div>
-
-      <div className="bg-white p-5 rounded-2xl shadow-sm border border-slate-100">
-        <div className="flex flex-wrap gap-4 items-center">
-          <div className="relative">
-            <Search className="w-4 h-4 absolute left-3 top-2.5 text-slate-400" />
-            <input 
-              type="text" 
-              placeholder="Cari nama atau telepon..." 
-              value={searchQuery}
-              onChange={e => setSearchQuery(e.target.value)}
-              className="pl-9 pr-4 py-2 border border-slate-300 rounded-md text-sm w-64 outline-none focus:border-blue-500 transition-colors" 
-            />
+    <div>
+      <PageHeader
+        title="Data Kontak Customer"
+        subtitle={`${meta.total} total kontak terdaftar`}
+        actions={
+          <div style={{ display: "flex", gap: 8 }}>
+            <button className="btn btn-secondary btn-sm" onClick={handleExport}><Download size={14} /> Export Excel</button>
+            <button className="btn btn-primary" onClick={openAdd}><Plus size={14} /> Tambah Kontak</button>
           </div>
-          <select 
-            value={typeFilter}
-            onChange={e => setTypeFilter(e.target.value)}
-            className="p-2 border border-slate-300 rounded-md text-sm outline-none focus:border-blue-500"
-          >
-            <option value="">-- Semua Tipe --</option>
-            <option value="Personal">Personal</option>
-            <option value="Instansi">Instansi</option>
-            <option value="Corporate">Corporate</option>
+        }
+      />
+
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: 10, marginBottom: 16 }}>
+        <StatCard label="Total Kontak" value={meta.total} icon={Users} color={C.primary} />
+        <StatCard label="Corporate (di halaman ini)" value={corporateCount} icon={Users} color="#378ADD" />
+      </div>
+
+      <div className="erp-card" style={{ marginBottom: 12, padding: "12px 16px" }}>
+        <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
+          <input value={search} onChange={e => setSearch(e.target.value)} placeholder="🔍 Cari nama, telepon, email..." style={{ width: 250 }} />
+          <select value={typeFilter} onChange={e => setTypeFilter(e.target.value)} style={{ width: 160 }}>
+            <option value="">Semua Tipe</option>
+            <option>Perorangan</option><option>Corporate</option><option>Instansi</option>
           </select>
+          <button className="btn btn-secondary btn-sm" onClick={() => { setSearch(""); setTypeFilter(""); }}>Reset</button>
         </div>
       </div>
 
-      <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse whitespace-nowrap">
-            <thead>
-              <tr className="bg-slate-50 text-slate-500 text-xs uppercase tracking-wider border-b border-slate-200">
-                <th className="p-4 font-medium pl-6 w-16">No.</th>
-                <th className="p-4 font-medium w-12"></th>
-                <th className="p-4 font-medium">Nama Customer</th>
-                <th className="p-4 font-medium">No. Telepon / WA</th>
-                <th className="p-4 font-medium">Total Order</th>
-                <th className="p-4 font-medium">Catatan Khusus</th>
-                <th className="p-4 font-medium text-center">Aksi</th>
-              </tr>
-            </thead>
-            <tbody className="text-sm text-slate-700">
-              {loading ? (
-                <tr><td colSpan={7} className="text-center p-4">Loading...</td></tr>
-              ) : currentItems.length === 0 ? (
-                <tr><td colSpan={7} className="text-center p-4">Tidak ada data.</td></tr>
-              ) : currentItems.map((cust, idx) => (
-                <tr key={cust.id} className="border-b border-slate-100 hover:bg-slate-50/80 transition-colors">
-                  <td className="p-4 pl-6 text-slate-500">{(currentPage - 1) * itemsPerPage + idx + 1}</td>
-                  <td className="p-4">
-                     <div className="w-8 h-8 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center font-semibold text-xs">
-                        {getInitials(cust.name)}
-                     </div>
-                  </td>
-                  <td className="p-4 font-medium text-slate-800">{cust.name}</td>
-                  <td className="p-4 text-slate-600">{cust.phone}</td>
-                  <td className="p-4">
-                    <span className="bg-slate-100 text-slate-700 px-2.5 py-1 rounded-full text-xs font-medium">{cust.total_orders}x Order</span>
-                  </td>
-                  <td className="p-4 text-slate-500 italic max-w-xs truncate">{cust.notes}</td>
-                  <td className="p-4 flex justify-center space-x-2">
-                    <button onClick={() => handleEdit(cust)} className="text-slate-400 hover:text-amber-500 p-1.5 transition-colors" title="Edit Profil"><Edit className="w-4 h-4" /></button>
-                    <button onClick={() => handleDelete(cust.id)} className="text-slate-400 hover:text-rose-500 p-1.5 transition-colors" title="Hapus"><Trash2 className="w-4 h-4" /></button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-        <Pagination 
-          currentPage={currentPage}
-          totalPages={totalPages}
-          onPageChange={setCurrentPage}
-          totalItems={filteredCustomers.length}
-          itemsPerPage={itemsPerPage}
-        />
+      <div className="erp-card-flush">
+        {loading ? (
+          <p style={{ padding: 24, color: "#6b7280", fontSize: 13 }}>Memuat...</p>
+        ) : (
+          <>
+            <div style={{ overflowX: "auto" }}>
+              <table>
+                <thead>
+                  <tr>
+                    <th>No.</th><th>Nama</th><th>Telepon</th><th>Tipe</th><th>Email</th>
+                    <th>Terakhir Order</th><th>Aksi</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {rows.length === 0 ? (
+                    <tr><td colSpan={7} style={{ textAlign: "center", padding: "24px", color: "#6b7280" }}>Tidak ada data</td></tr>
+                  ) : rows.map((c: any, idx: number) => (
+                    <tr key={c.id}>
+                      <td style={{ fontSize: 12, color: "#6b7280" }}>{(meta.page - 1) * meta.limit + idx + 1}</td>
+                      <td>
+                        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                          <div style={{
+                            width: 32, height: 32, borderRadius: "50%",
+                            background: C.primary + "20",
+                            display: "flex", alignItems: "center", justifyContent: "center",
+                            fontSize: 11, fontWeight: 700, color: C.primary, flexShrink: 0,
+                          }}>
+                            {c.name.slice(0, 2).toUpperCase()}
+                          </div>
+                          <div>
+                            <p style={{ fontSize: 13, fontWeight: 600 }}>{c.name}</p>
+                            <p style={{ fontSize: 11, color: "#6b7280" }}>{c.address || "Alamat belum diisi"}</p>
+                          </div>
+                        </div>
+                      </td>
+                      <td style={{ fontFamily: "monospace", fontSize: 12 }}>{c.phone || "-"}</td>
+                      <td>
+                        <Badge color={c.type === "Corporate" ? "blue" : c.type === "Instansi" ? "purple" : "gray"}>
+                          {c.type || "Perorangan"}
+                        </Badge>
+                      </td>
+                      <td style={{ fontSize: 12, color: "#6b7280" }}>{c.email || "-"}</td>
+                      <td style={{ fontSize: 12 }}>
+                        {c.last_order ? String(c.last_order).slice(0, 10) : <span style={{ color: "#6b7280" }}>Belum pernah</span>}
+                      </td>
+                      <td>
+                        <button className="btn btn-secondary btn-sm" onClick={() => openEdit(c)}><Edit2 size={11} /></button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            <Pagination 
+              page={meta.page} totalPages={meta.totalPages} total={meta.total} limit={meta.limit} 
+              onChange={(p) => fetchCustomers(p, meta.limit)} 
+              onLimitChange={(lim) => fetchCustomers(1, lim)}
+            />
+          </>
+        )}
       </div>
+
+      <Modal show={showModal} onClose={() => setShowModal(false)} title={editItem ? "Edit Kontak" : "Tambah Kontak"}>
+        <FormRow>
+          <FormField label="Nama *"><input value={form.name} onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))} placeholder="Nama / kode customer" /></FormField>
+          <FormField label="No. Telepon / WA"><input value={form.phone} onChange={(e) => setForm((f) => ({ ...f, phone: e.target.value }))} placeholder="08xx..." /></FormField>
+        </FormRow>
+        <FormRow>
+          <FormField label="Tipe Customer">
+            <select value={form.type} onChange={(e) => setForm((f) => ({ ...f, type: e.target.value }))}>
+              <option>Perorangan</option><option>Corporate</option><option>Instansi</option>
+            </select>
+          </FormField>
+          <FormField label="Email"><input type="email" value={form.email} onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))} placeholder="email@domain.com" /></FormField>
+        </FormRow>
+        <FormField label="Alamat" style={{ marginBottom: 14 }}><input value={form.address} onChange={(e) => setForm((f) => ({ ...f, address: e.target.value }))} placeholder="Alamat lengkap" /></FormField>
+        <FormField label="Catatan" style={{ marginBottom: 14 }}><textarea rows={2} value={form.notes} onChange={(e) => setForm((f) => ({ ...f, notes: e.target.value }))} /></FormField>
+        <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
+          <button className="btn btn-secondary" onClick={() => setShowModal(false)}>Batal</button>
+          <button className="btn btn-primary" onClick={handleSave}>{editItem ? "Simpan Perubahan" : "Simpan"}</button>
+        </div>
+      </Modal>
     </div>
   );
 }
