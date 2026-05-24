@@ -7,6 +7,7 @@ import {
 } from "lucide-react";
 import { Badge } from "@/components/ui/Badge";
 import { Modal } from "@/components/ui/Modal";
+import { ConfirmModal } from "@/components/ui/ConfirmModal";
 import { SearchableSelect } from "@/components/ui/SearchableSelect";
 import { fmt, statusBadgeColor } from "@/lib/utils";
 
@@ -23,6 +24,7 @@ export default function ScheduleDetailPage() {
   // BOM — dua mode: Resep & Custom
   const [bomMode, setBomMode] = useState<"resep" | "custom">("resep");
   const [showBomModal, setShowBomModal] = useState(false);
+  const [confirmAction, setConfirmAction] = useState<{ title?: string; message: string; danger?: boolean; onConfirm: () => void; } | null>(null);
 
   // Mode Resep
   const [bomResep, setBomResep] = useState({ recipe_id: "", quantity_pax: "" });
@@ -104,39 +106,65 @@ export default function ScheduleDetailPage() {
 
   // ---- Remove Menu ----
   const handleRemoveMenu = async (menuId: number) => {
-    if (!confirm("Hapus menu ini?")) return;
-    await fetch(`/api/production-schedules/${id}/menus?menu_id=${menuId}`, { method: "DELETE" });
-    fetchSched();
+    setConfirmAction({
+      title: "Hapus Menu",
+      message: "Yakin ingin menghapus menu ini dari BOM?",
+      onConfirm: async () => {
+        await fetch(`/api/production-schedules/${id}/menus?menu_id=${menuId}`, { method: "DELETE" });
+        fetchSched();
+        setConfirmAction(null);
+      }
+    });
   };
 
   // ---- Remove Custom Item ----
   const handleRemoveCustomItem = async (itemId: number) => {
-    if (!confirm("Hapus item ini?")) return;
-    await fetch(`/api/production-schedules/${id}/custom-items?item_id=${itemId}`, { method: "DELETE" });
-    fetchSched();
+    setConfirmAction({
+      title: "Hapus Bahan",
+      message: "Yakin ingin menghapus bahan custom ini dari BOM?",
+      onConfirm: async () => {
+        await fetch(`/api/production-schedules/${id}/custom-items?item_id=${itemId}`, { method: "DELETE" });
+        fetchSched();
+        setConfirmAction(null);
+      }
+    });
   };
 
   // ---- Manual Approve ----
   const handleApprove = async () => {
-    if (!confirm("Approve jadwal ini secara manual? Budget tidak akan dicek ulang.")) return;
-    const res = await fetch(`/api/production-schedules/${id}/approve`, { method: "POST" });
-    if (res.ok) fetchSched();
-    else { const e = await res.json(); alert(e.error || "Gagal approve"); }
+    setConfirmAction({
+      title: "Approve Manual",
+      message: "Approve jadwal ini secara manual? Budget tidak akan dicek ulang.",
+      danger: false,
+      onConfirm: async () => {
+        const res = await fetch(`/api/production-schedules/${id}/approve`, { method: "POST" });
+        if (res.ok) fetchSched();
+        else { const e = await res.json(); alert(e.error || "Gagal approve"); }
+        setConfirmAction(null);
+      }
+    });
   };
 
   // ---- Generate PR ----
   const handleGeneratePR = async () => {
-    if (!confirm("Kirim Purchase Request ke Purchasing?")) return;
-    setSubmitting(true);
-    const res = await fetch(`/api/production-schedules/${id}/generate-pr`, { method: "POST" });
-    if (res.ok) {
-      alert("✅ PR berhasil dikirim ke Purchasing!");
-      fetchSched();
-    } else {
-      const e = await res.json();
-      alert(e.error || "Gagal generate PR");
-    }
-    setSubmitting(false);
+    setConfirmAction({
+      title: "Kirim PR",
+      message: "Kirim Purchase Request ke Purchasing?",
+      danger: false,
+      onConfirm: async () => {
+        setSubmitting(true);
+        const res = await fetch(`/api/production-schedules/${id}/generate-pr`, { method: "POST" });
+        if (res.ok) {
+          alert("✅ PR berhasil dikirim ke Purchasing!");
+          fetchSched();
+        } else {
+          const e = await res.json();
+          alert(e.error || "Gagal generate PR");
+        }
+        setSubmitting(false);
+        setConfirmAction(null);
+      }
+    });
   };
 
   if (loading) return <div style={{ padding: 48, textAlign: "center", color: "#6b7280" }}>Memuat detail jadwal...</div>;
@@ -496,6 +524,16 @@ export default function ScheduleDetailPage() {
           </>
         )}
       </Modal>
+
+      <ConfirmModal
+        show={!!confirmAction}
+        title={confirmAction?.title}
+        message={confirmAction?.message || ""}
+        danger={confirmAction?.danger !== false}
+        confirmLabel={confirmAction?.danger === false ? "Ya, Lanjutkan" : "Ya, Hapus"}
+        onConfirm={() => confirmAction?.onConfirm()}
+        onCancel={() => setConfirmAction(null)}
+      />
     </div>
   );
 }

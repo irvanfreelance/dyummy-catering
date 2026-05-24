@@ -1,10 +1,11 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
-import { Users, Plus, Edit2, Download, Upload } from "lucide-react";
+import { Users, Plus, Edit2, Download, Upload, Trash2 } from "lucide-react";
 import { StatCard } from "@/components/ui/StatCard";
 import { Badge } from "@/components/ui/Badge";
 import { Modal } from "@/components/ui/Modal";
+import { ConfirmModal } from "@/components/ui/ConfirmModal";
 import { XlsxImportModal } from "@/components/ui/XlsxImportModal";
 import { PageHeader, FormRow, FormField } from "@/components/ui/PageHeader";
 import { Pagination } from "@/components/ui/Pagination";
@@ -25,6 +26,7 @@ export default function CustomersPage() {
   const [showModal, setShowModal] = useState(false);
   const [showImport, setShowImport] = useState(false);
   const [editItem, setEditItem] = useState<any>(null);
+  const [itemToDelete, setItemToDelete] = useState<any>(null);
   const [form, setForm] = useState(EMPTY_FORM);
   const [loading, setLoading] = useState(true);
 
@@ -60,6 +62,13 @@ export default function CustomersPage() {
       method, headers: { "Content-Type": "application/json" }, body: JSON.stringify(form),
     });
     if (res.ok) { setShowModal(false); fetchCustomers(meta.page); }
+  };
+
+  const executeDelete = async () => {
+    if (!itemToDelete) return;
+    await fetch(`/api/customers/${itemToDelete.id}`, { method: "DELETE" });
+    setItemToDelete(null);
+    fetchCustomers(meta.page);
   };
 
   const corporateCount = rows.filter((c) => c.type === "Corporate").length;
@@ -150,7 +159,10 @@ export default function CustomersPage() {
                         {c.last_order ? String(c.last_order).slice(0, 10) : <span style={{ color: "#6b7280" }}>Belum pernah</span>}
                       </td>
                       <td>
-                        <button className="btn btn-secondary btn-sm" onClick={() => openEdit(c)}><Edit2 size={11} /></button>
+                        <div style={{ display: "flex", gap: 4 }}>
+                          <button className="btn btn-secondary btn-sm" onClick={() => openEdit(c)}><Edit2 size={11} /></button>
+                          <button className="btn btn-secondary btn-sm" onClick={() => setItemToDelete(c)} title="Hapus"><Trash2 size={11} color="#E24B4A" /></button>
+                        </div>
                       </td>
                     </tr>
                   ))}
@@ -210,6 +222,14 @@ export default function CustomersPage() {
           <button className="btn btn-primary" onClick={handleSave}>{editItem ? "Simpan Perubahan" : "Simpan"}</button>
         </div>
       </Modal>
+
+      <ConfirmModal
+        show={!!itemToDelete}
+        title="Hapus Customer"
+        message={`Yakin ingin menghapus kontak ${itemToDelete?.name}? Data yang dihapus tidak dapat dikembalikan.`}
+        onConfirm={executeDelete}
+        onCancel={() => setItemToDelete(null)}
+      />
     </div>
   );
 }

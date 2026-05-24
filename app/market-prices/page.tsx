@@ -1,10 +1,11 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { TrendingUp, TrendingDown, RefreshCw, Plus, Edit2, ArrowUpRight, ArrowDownRight } from "lucide-react";
+import { TrendingUp, TrendingDown, RefreshCw, Plus, Edit2, ArrowUpRight, ArrowDownRight, Trash2 } from "lucide-react";
 import { StatCard } from "@/components/ui/StatCard";
 import { Badge } from "@/components/ui/Badge";
 import { Modal } from "@/components/ui/Modal";
+import { ConfirmModal } from "@/components/ui/ConfirmModal";
 import { PageHeader, FormRow, FormField } from "@/components/ui/PageHeader";
 import { SearchableSelect } from "@/components/ui/SearchableSelect";
 import { fmt } from "@/lib/utils";
@@ -25,6 +26,7 @@ export default function MarketPricesPage() {
   const [prices, setPrices] = useState(initPrices);
   const [showModal, setShowModal] = useState(false);
   const [editItem, setEditItem] = useState<any>(null);
+  const [itemToDelete, setItemToDelete] = useState<any>(null);
   const [form, setForm] = useState({ name: "", category: "Protein", uom: "Kg", currentPrice: "", notes: "" });
 
   const naik = prices.filter((p) => p.change > 0).length;
@@ -53,6 +55,12 @@ export default function MarketPricesPage() {
       }]);
     }
     setShowModal(false);
+  };
+
+  const executeDelete = () => {
+    if (!itemToDelete) return;
+    setPrices((prev) => prev.filter((p) => p.id !== itemToDelete.id));
+    setItemToDelete(null);
   };
 
   return (
@@ -99,7 +107,12 @@ export default function MarketPricesPage() {
                   </td>
                   <td style={{ fontSize: 12 }}>{item.updatedBy}</td>
                   <td style={{ fontSize: 12, color: "#6b7280" }}>{item.updatedAt}</td>
-                  <td><button className="btn btn-secondary btn-sm" onClick={() => openEdit(item)}><Edit2 size={11} /></button></td>
+                  <td>
+                    <div style={{ display: "flex", gap: 4 }}>
+                      <button className="btn btn-secondary btn-sm" onClick={() => openEdit(item)}><Edit2 size={11} /></button>
+                      <button className="btn btn-secondary btn-sm" onClick={() => setItemToDelete(item)} title="Hapus"><Trash2 size={11} color="#E24B4A" /></button>
+                    </div>
+                  </td>
                 </tr>
               ))}
             </tbody>
@@ -133,6 +146,14 @@ export default function MarketPricesPage() {
           <button className="btn btn-primary" onClick={handleSave}>Simpan Harga</button>
         </div>
       </Modal>
+
+      <ConfirmModal
+        show={!!itemToDelete}
+        title="Hapus Harga Bahan"
+        message={`Yakin ingin menghapus harga bahan ${itemToDelete?.name}? Data yang dihapus tidak dapat dikembalikan.`}
+        onConfirm={executeDelete}
+        onCancel={() => setItemToDelete(null)}
+      />
     </div>
   );
 }

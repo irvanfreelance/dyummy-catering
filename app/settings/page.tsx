@@ -1,9 +1,10 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Plus, Edit2, Lock, UserPlus } from "lucide-react";
+import { Plus, Edit2, Lock, UserPlus, Trash2 } from "lucide-react";
 import { Badge } from "@/components/ui/Badge";
 import { Modal } from "@/components/ui/Modal";
+import { ConfirmModal } from "@/components/ui/ConfirmModal";
 import { PageHeader, FormRow, FormField } from "@/components/ui/PageHeader";
 import { SearchableSelect } from "@/components/ui/SearchableSelect";
 import { statusBadgeColor, roleColor } from "@/lib/utils";
@@ -16,6 +17,7 @@ export default function SettingsPage() {
   const [users, setUsers] = useState<any[]>([]);
   const [showModal, setShowModal] = useState(false);
   const [editItem, setEditItem] = useState<any>(null);
+  const [itemToDelete, setItemToDelete] = useState<any>(null);
   const [form, setForm] = useState(EMPTY_FORM);
 
   const fetchUsers = () =>
@@ -42,9 +44,10 @@ export default function SettingsPage() {
     else { const d = await res.json(); alert(d.error || "Gagal simpan"); }
   };
 
-  const handleDeactivate = async (id: string) => {
-    if (!confirm("Nonaktifkan user ini?")) return;
-    await fetch(`/api/users/${id}`, { method: "DELETE" });
+  const executeDelete = async () => {
+    if (!itemToDelete) return;
+    await fetch(`/api/users/${itemToDelete.id}`, { method: "DELETE" });
+    setItemToDelete(null);
     fetchUsers();
   };
 
@@ -89,8 +92,8 @@ export default function SettingsPage() {
                   <td>
                     <div style={{ display: "flex", gap: 4 }}>
                       <button className="btn btn-secondary btn-sm" onClick={() => openEdit(u)}><Edit2 size={11} /></button>
-                      <button className="btn btn-secondary btn-sm" onClick={() => handleDeactivate(u.id)} title="Nonaktifkan">
-                        <Lock size={11} />
+                      <button className="btn btn-secondary btn-sm" onClick={() => setItemToDelete(u)} title="Hapus">
+                        <Trash2 size={11} color="#E24B4A" />
                       </button>
                     </div>
                   </td>
@@ -131,6 +134,14 @@ export default function SettingsPage() {
           <button className="btn btn-primary" onClick={handleSave}>{editItem ? "Simpan Perubahan" : "Buat Akun"}</button>
         </div>
       </Modal>
+
+      <ConfirmModal
+        show={!!itemToDelete}
+        title="Hapus Pengguna"
+        message={`Yakin ingin menghapus pengguna ${itemToDelete?.name}? Data yang dihapus tidak dapat dikembalikan.`}
+        onConfirm={executeDelete}
+        onCancel={() => setItemToDelete(null)}
+      />
     </div>
   );
 }

@@ -1,8 +1,9 @@
 "use client";
 import { useEffect, useState, useCallback } from "react";
-import { Plus, Filter, Download, Upload } from "lucide-react";
+import { Plus, Filter, Download, Upload, Trash2 } from "lucide-react";
 import { Badge } from "@/components/ui/Badge";
 import { Modal } from "@/components/ui/Modal";
+import { ConfirmModal } from "@/components/ui/ConfirmModal";
 import { XlsxImportModal } from "@/components/ui/XlsxImportModal";
 import { PageHeader, FormRow, FormField } from "@/components/ui/PageHeader";
 import { Pagination } from "@/components/ui/Pagination";
@@ -21,7 +22,9 @@ export default function LeadsPage() {
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [showImport, setShowImport] = useState(false);
+  const [showImport, setShowImport] = useState(false);
   const [editItem, setEditItem] = useState<any>(null);
+  const [itemToDelete, setItemToDelete] = useState<any>(null);
 
   // Filters
   const [search, setSearch] = useState("");
@@ -69,6 +72,13 @@ export default function LeadsPage() {
     const method = editItem ? "PUT" : "POST";
     const res = await fetch(url, { method, headers: { "Content-Type": "application/json" }, body: JSON.stringify(form) });
     if (res.ok) { setShowModal(false); setEditItem(null); fetchLeads(1); }
+  };
+
+  const executeDelete = async () => {
+    if (!itemToDelete) return;
+    await fetch(`/api/leads/${itemToDelete.id}`, { method: "DELETE" });
+    setItemToDelete(null);
+    fetchLeads(meta.page);
   };
 
   const handleStatusChange = async (id: number, status: string) => {
@@ -170,7 +180,10 @@ export default function LeadsPage() {
                       <td style={{ fontSize: 11 }}>{r.tags || "-"}</td>
                       <td style={{ fontSize: 11, color: "#6b7280", maxWidth: 180, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{r.notes || "-"}</td>
                       <td>
-                        <button className="btn btn-secondary btn-sm" onClick={() => { setEditItem(r); setForm({ customer_id: r.customer_id, customer_name: "", customer_phone: "", pic_id: r.pic_id || "", lead_date: String(r.lead_date).slice(0,10), source: r.source, status: r.status, tags: r.tags || "", notes: r.notes || "" }); setShowModal(true); }}>Edit</button>
+                        <div style={{ display: "flex", gap: 4 }}>
+                          <button className="btn btn-secondary btn-sm" onClick={() => { setEditItem(r); setForm({ customer_id: r.customer_id, customer_name: "", customer_phone: "", pic_id: r.pic_id || "", lead_date: String(r.lead_date).slice(0,10), source: r.source, status: r.status, tags: r.tags || "", notes: r.notes || "" }); setShowModal(true); }}>Edit</button>
+                          <button className="btn btn-secondary btn-sm" onClick={() => setItemToDelete(r)} title="Hapus"><Trash2 size={11} color="#E24B4A" /></button>
+                        </div>
                       </td>
                     </tr>
                   ))}
@@ -273,6 +286,14 @@ export default function LeadsPage() {
           <button className="btn btn-primary" onClick={handleSave}>{editItem ? "Update" : "Simpan"}</button>
         </div>
       </Modal>
+
+      <ConfirmModal
+        show={!!itemToDelete}
+        title="Hapus Lead"
+        message={`Yakin ingin menghapus lead dari ${itemToDelete?.customer_name}? Data yang dihapus tidak dapat dikembalikan.`}
+        onConfirm={executeDelete}
+        onCancel={() => setItemToDelete(null)}
+      />
     </div>
   );
 }

@@ -5,6 +5,7 @@ import { PageHeader } from "@/components/ui/PageHeader";
 import { Pagination } from "@/components/ui/Pagination";
 import { SearchableSelect } from "@/components/ui/SearchableSelect";
 import { Modal } from "@/components/ui/Modal";
+import { ConfirmModal } from "@/components/ui/ConfirmModal";
 import { fmt, statusBadgeColor } from "@/lib/utils";
 import { exportToExcel } from "@/lib/export";
 import { Badge } from "@/components/ui/Badge";
@@ -33,6 +34,7 @@ export default function PurchasingPage() {
   const [selectedPO, setSelectedPO] = useState<any>(null);
   const [realisasiForm, setRealisasiForm] = useState({ total_actual_cost: "", variance_notes: "", status_po: "Selesai Belanja" });
   const [submitting, setSubmitting] = useState(false);
+  const [confirmAction, setConfirmAction] = useState<{ title: string; message: string; onConfirm: () => void; } | null>(null);
 
   // ---- Fetch PR ----
   const buildPrQs = useCallback((page = 1, lim = prMeta.limit) => {
@@ -70,23 +72,29 @@ export default function PurchasingPage() {
 
   // ---- Purchasing: Proses PR → buat PO ----
   const handleProsesPR = async (prId: number) => {
-    if (!confirm("Proses PR ini dan buat Purchase Order?")) return;
-    setSubmitting(true);
-    const res = await fetch(`/api/purchase-requests/${prId}/create-po`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ po_date: new Date().toISOString().split("T")[0] }),
+    setConfirmAction({
+      title: "Proses Purchase Request",
+      message: "Proses PR ini dan buat Purchase Order?",
+      onConfirm: async () => {
+        setSubmitting(true);
+        const res = await fetch(`/api/purchase-requests/${prId}/create-po`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ po_date: new Date().toISOString().split("T")[0] }),
+        });
+        if (res.ok) {
+          alert("✅ PO berhasil dibuat! Beralih ke tab Purchase Orders.");
+          fetchPRs(prMeta.page);
+          fetchPOs(1);
+          setActiveTab("po");
+        } else {
+          const e = await res.json();
+          alert(e.error || "Gagal membuat PO");
+        }
+        setSubmitting(false);
+        setConfirmAction(null);
+      }
     });
-    if (res.ok) {
-      alert("✅ PO berhasil dibuat! Beralih ke tab Purchase Orders.");
-      fetchPRs(prMeta.page);
-      fetchPOs(1);
-      setActiveTab("po");
-    } else {
-      const e = await res.json();
-      alert(e.error || "Gagal membuat PO");
-    }
-    setSubmitting(false);
   };
 
   // ---- Finance: Input Realisasi ----
@@ -412,6 +420,16 @@ export default function PurchasingPage() {
           </>
         )}
       </Modal>
+
+      <ConfirmModal
+        show={!!confirmAction}
+        title={confirmAction?.title || ""}
+        message={confirmAction?.message || ""}
+        danger={false}
+        confirmLabel="Ya, Lanjutkan"
+        onConfirm={() => confirmAction?.onConfirm()}
+        onCancel={() => setConfirmAction(null)}
+      />
     </div>
   );
 }

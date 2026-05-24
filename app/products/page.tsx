@@ -1,8 +1,9 @@
 "use client";
 import { useEffect, useState, useCallback } from "react";
-import { Plus, Download } from "lucide-react";
+import { Plus, Download, Edit2, Trash2 } from "lucide-react";
 import { Badge } from "@/components/ui/Badge";
 import { Modal } from "@/components/ui/Modal";
+import { ConfirmModal } from "@/components/ui/ConfirmModal";
 import { PageHeader, FormRow, FormField } from "@/components/ui/PageHeader";
 import { Pagination } from "@/components/ui/Pagination";
 import { SearchableSelect } from "@/components/ui/SearchableSelect";
@@ -18,6 +19,8 @@ export default function ProductsPage() {
   const [showModal, setShowModal] = useState(false);
   const [search, setSearch] = useState("");
   const [fCategory, setFCategory] = useState("");
+  const [editItem, setEditItem] = useState<any>(null);
+  const [itemToDelete, setItemToDelete] = useState<any>(null);
   const [form, setForm] = useState({ name: "", category: "Nasi Box", price: 0, description: "", status: "Aktif" });
 
   const buildQs = useCallback((page = 1, lim = meta.limit) => {
@@ -37,10 +40,22 @@ export default function ProductsPage() {
 
   useEffect(() => { fetchProducts(1, meta.limit); }, [fetchProducts]);
 
+  const openAdd = () => { setEditItem(null); setForm({ name: "", category: "Nasi Box", price: 0, description: "", status: "Aktif" }); setShowModal(true); };
+  const openEdit = (p: any) => { setEditItem(p); setForm({ name: p.name, category: p.category, price: p.price, description: p.description || "", status: p.status }); setShowModal(true); };
+
   const handleSave = async () => {
     if (!form.name || form.price <= 0) return alert("Nama dan harga wajib diisi valid");
-    const res = await fetch("/api/products", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(form) });
+    const url = editItem ? `/api/products/${editItem.id}` : "/api/products";
+    const method = editItem ? "PUT" : "POST";
+    const res = await fetch(url, { method, headers: { "Content-Type": "application/json" }, body: JSON.stringify(form) });
     if (res.ok) { setShowModal(false); setForm({ name: "", category: "Nasi Box", price: 0, description: "", status: "Aktif" }); fetchProducts(meta.page); }
+  };
+
+  const executeDelete = async () => {
+    if (!itemToDelete) return;
+    await fetch(`/api/products/${itemToDelete.id}`, { method: "DELETE" });
+    setItemToDelete(null);
+    fetchProducts(meta.page);
   };
 
   const handleExport = async () => {
@@ -58,7 +73,7 @@ export default function ProductsPage() {
         actions={
           <div style={{ display: "flex", gap: 8 }}>
             <button className="btn btn-secondary btn-sm" onClick={handleExport}><Download size={14} /> Export Excel</button>
-            <button className="btn btn-primary" onClick={() => { setForm({ name: "", category: "Nasi Box", price: 0, description: "", status: "Aktif" }); setShowModal(true); }}><Plus size={14} /> Tambah Produk</button>
+            <button className="btn btn-primary" onClick={openAdd}><Plus size={14} /> Tambah Produk</button>
           </div>
         }
       />
@@ -81,7 +96,7 @@ export default function ProductsPage() {
             <div style={{ overflowX: "auto" }}>
               <table>
                 <thead>
-                  <tr><th>No.</th><th>ID</th><th>Nama Produk</th><th>Kategori</th><th>Harga Jual</th><th>Deskripsi</th><th>Status</th></tr>
+                  <tr><th>No.</th><th>ID</th><th>Nama Produk</th><th>Kategori</th><th>Harga Jual</th><th>Deskripsi</th><th>Status</th><th>Aksi</th></tr>
                 </thead>
                 <tbody>
                   {rows.length === 0 ? (
@@ -95,6 +110,12 @@ export default function ProductsPage() {
                       <td style={{ fontWeight: 600, color: "#1D9E75" }}>{fmt(r.price)}</td>
                       <td style={{ fontSize: 11, color: "#6b7280", maxWidth: 200, textOverflow: "ellipsis", overflow: "hidden", whiteSpace: "nowrap" }}>{r.description || "-"}</td>
                       <td><Badge color={r.status === "Aktif" ? "green" : "red"}>{r.status}</Badge></td>
+                      <td>
+                        <div style={{ display: "flex", gap: 4 }}>
+                          <button className="btn btn-secondary btn-sm" onClick={() => openEdit(r)}><Edit2 size={11} /></button>
+                          <button className="btn btn-secondary btn-sm" onClick={() => setItemToDelete(r)} title="Hapus"><Trash2 size={11} color="#E24B4A" /></button>
+                        </div>
+                      </td>
                     </tr>
                   ))}
                 </tbody>
@@ -138,6 +159,14 @@ export default function ProductsPage() {
           <button className="btn btn-primary" onClick={handleSave}>Simpan</button>
         </div>
       </Modal>
+
+      <ConfirmModal
+        show={!!itemToDelete}
+        title="Hapus Produk"
+        message={`Yakin ingin menghapus produk ${itemToDelete?.name}? Data yang dihapus tidak dapat dikembalikan.`}
+        onConfirm={executeDelete}
+        onCancel={() => setItemToDelete(null)}
+      />
     </div>
   );
 }

@@ -1,9 +1,10 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
-import { Plus, Edit2, Download } from "lucide-react";
+import { Plus, Edit2, Download, Trash2 } from "lucide-react";
 import { Badge } from "@/components/ui/Badge";
 import { Modal } from "@/components/ui/Modal";
+import { ConfirmModal } from "@/components/ui/ConfirmModal";
 import { PageHeader, FormRow, FormField } from "@/components/ui/PageHeader";
 import { Pagination } from "@/components/ui/Pagination";
 import { SearchableSelect } from "@/components/ui/SearchableSelect";
@@ -21,6 +22,7 @@ export default function RecipesPage() {
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [editItem, setEditItem] = useState<any>(null);
+  const [itemToDelete, setItemToDelete] = useState<any>(null);
   const [form, setForm] = useState(EMPTY_FORM);
   const [search, setSearch] = useState("");
   const [fProduct, setFProduct] = useState("");
@@ -60,6 +62,13 @@ export default function RecipesPage() {
       method, headers: { "Content-Type": "application/json" }, body: JSON.stringify(form),
     });
     if (res.ok) { setShowModal(false); fetchRecipes(meta.page); }
+  };
+
+  const executeDelete = async () => {
+    if (!itemToDelete) return;
+    await fetch(`/api/recipes/${itemToDelete.id}`, { method: "DELETE" });
+    setItemToDelete(null);
+    fetchRecipes(meta.page);
   };
 
   const handleExport = async () => {
@@ -118,7 +127,10 @@ export default function RecipesPage() {
                       <td style={{ fontSize: 12, color: "#6b7280", maxWidth: 200 }}>{r.ingredients}</td>
                       <td style={{ fontWeight: 700, color: C.primary }}>{fmt(r.standard_cost)}</td>
                       <td>
-                        <button className="btn btn-secondary btn-sm" onClick={() => openEdit(r)}><Edit2 size={11} /></button>
+                        <div style={{ display: "flex", gap: 4 }}>
+                          <button className="btn btn-secondary btn-sm" onClick={() => openEdit(r)}><Edit2 size={11} /></button>
+                          <button className="btn btn-secondary btn-sm" onClick={() => setItemToDelete(r)} title="Hapus"><Trash2 size={11} color="#E24B4A" /></button>
+                        </div>
                       </td>
                     </tr>
                   ))}
@@ -159,6 +171,14 @@ export default function RecipesPage() {
           <button className="btn btn-primary" onClick={handleSave}>{editItem ? "Simpan Perubahan" : "Simpan Resep"}</button>
         </div>
       </Modal>
+
+      <ConfirmModal
+        show={!!itemToDelete}
+        title="Hapus Resep"
+        message={`Yakin ingin menghapus resep ${itemToDelete?.menu_name}? Data yang dihapus tidak dapat dikembalikan.`}
+        onConfirm={executeDelete}
+        onCancel={() => setItemToDelete(null)}
+      />
     </div>
   );
 }

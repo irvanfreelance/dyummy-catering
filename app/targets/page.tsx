@@ -7,6 +7,7 @@ import {
 import { Plus, Edit2, Trash2, RefreshCw } from "lucide-react";
 import { Badge } from "@/components/ui/Badge";
 import { Modal } from "@/components/ui/Modal";
+import { ConfirmModal } from "@/components/ui/ConfirmModal";
 import { PageHeader, FormRow, FormField } from "@/components/ui/PageHeader";
 import { SearchableSelect } from "@/components/ui/SearchableSelect";
 import { fmt } from "@/lib/utils";
@@ -72,6 +73,7 @@ export default function TargetsPage() {
   const [refreshing, setRefreshing] = useState(false);
   const [showModal, setShowModal] = useState(false);
   const [editItem, setEditItem] = useState<any>(null);
+  const [itemToDelete, setItemToDelete] = useState<any>(null);
   const [form, setForm] = useState(EMPTY_FORM);
   const [saving, setSaving] = useState(false);
 
@@ -128,9 +130,13 @@ export default function TargetsPage() {
     setSaving(false);
   };
 
-  const handleDelete = async (id: number) => {
-    if (!confirm("Hapus target ini?")) return;
-    await fetch(`/api/targets/${id}`, { method: "DELETE" });
+    setSaving(false);
+  };
+
+  const executeDelete = async () => {
+    if (!itemToDelete) return;
+    await fetch(`/api/targets/${itemToDelete.id}`, { method: "DELETE" });
+    setItemToDelete(null);
     fetchTargets(true);
   };
 
@@ -288,7 +294,7 @@ export default function TargetsPage() {
                         <td>
                           <div style={{ display: "flex", gap: 4 }}>
                             <button className="btn btn-secondary btn-sm" onClick={() => openEdit(t)}><Edit2 size={11} /></button>
-                            <button className="btn btn-secondary btn-sm" onClick={() => handleDelete(t.id)}><Trash2 size={11} /></button>
+                            <button className="btn btn-secondary btn-sm" onClick={() => setItemToDelete(t)} title="Hapus"><Trash2 size={11} color="#E24B4A" /></button>
                           </div>
                         </td>
                       </tr>
@@ -354,6 +360,14 @@ export default function TargetsPage() {
           </button>
         </div>
       </Modal>
+
+      <ConfirmModal
+        show={!!itemToDelete}
+        title="Hapus Target KPI"
+        message={`Yakin ingin menghapus target ${itemToDelete?.jenis} periode ${itemToDelete?.periode}? Data yang dihapus tidak dapat dikembalikan.`}
+        onConfirm={executeDelete}
+        onCancel={() => setItemToDelete(null)}
+      />
 
       <style>{`@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }`}</style>
     </div>

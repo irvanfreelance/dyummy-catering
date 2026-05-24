@@ -1,0 +1,36 @@
+import { NextRequest, NextResponse } from "next/server";
+import pool from "@/lib/db";
+
+export async function GET(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
+  const client = await pool.connect();
+  try {
+    const res = await client.query("SELECT * FROM products WHERE id = $1", [id]);
+    if (!res.rows.length) return NextResponse.json({ error: "Not found" }, { status: 404 });
+    return NextResponse.json(res.rows[0]);
+  } finally { client.release(); }
+}
+
+export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
+  const body = await req.json();
+  const { name, category, price, description, status } = body;
+  const client = await pool.connect();
+  try {
+    const res = await client.query(
+      `UPDATE products SET name=$1, category=$2, price=$3, description=$4, status=$5, updated_at=NOW()
+       WHERE id=$6 RETURNING *`,
+      [name, category, price, description, status, id]
+    );
+    return NextResponse.json(res.rows[0]);
+  } finally { client.release(); }
+}
+
+export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
+  const client = await pool.connect();
+  try {
+    await client.query("DELETE FROM products WHERE id = $1", [id]);
+    return NextResponse.json({ success: true });
+  } finally { client.release(); }
+}

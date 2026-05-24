@@ -3,6 +3,7 @@ import { useEffect, useState, useCallback } from "react";
 import { Plus, Printer, Trash2, Download } from "lucide-react";
 import { Badge } from "@/components/ui/Badge";
 import { Modal } from "@/components/ui/Modal";
+import { ConfirmModal } from "@/components/ui/ConfirmModal";
 import { PageHeader, FormRow, FormField } from "@/components/ui/PageHeader";
 import { Pagination } from "@/components/ui/Pagination";
 import { SearchableSelect } from "@/components/ui/SearchableSelect";
@@ -23,6 +24,7 @@ export default function OrdersPage() {
   const [products, setProducts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
+  const [itemToDelete, setItemToDelete] = useState<any>(null);
   const [form, setForm] = useState(emptyForm());
   const [fStatus, setFStatus] = useState("");
   const [fPay, setFPay] = useState("");
@@ -79,6 +81,13 @@ export default function OrdersPage() {
     const validItems = form.items.filter(i => i.product_id);
     const res = await fetch("/api/orders", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ ...form, items: validItems }) });
     if (res.ok) { setShowModal(false); setForm(emptyForm()); fetchOrders(1); }
+  };
+
+  const executeDelete = async () => {
+    if (!itemToDelete) return;
+    await fetch(`/api/orders/${itemToDelete.id}`, { method: "DELETE" });
+    setItemToDelete(null);
+    fetchOrders(meta.page);
   };
 
   const handleExport = async () => {
@@ -162,9 +171,14 @@ export default function OrdersPage() {
                       <td><Badge color={statusBadgeColor(o.status_order)}>{o.status_order}</Badge></td>
                       <td><Badge color={statusBadgeColor(o.status_payment)}>{o.status_payment}</Badge></td>
                       <td>
-                        <button className="btn btn-secondary btn-sm" onClick={() => window.open(`/print/order/${o.id}`, "_blank")} title="Print">
-                          <Printer size={11} /> Print
-                        </button>
+                        <div style={{ display: "flex", gap: 4 }}>
+                          <button className="btn btn-secondary btn-sm" onClick={() => window.open(`/print/order/${o.id}`, "_blank")} title="Print">
+                            <Printer size={11} /> Print
+                          </button>
+                          <button className="btn btn-secondary btn-sm" onClick={() => setItemToDelete(o)} title="Hapus">
+                            <Trash2 size={11} color="#E24B4A" />
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   ))}
@@ -274,6 +288,14 @@ export default function OrdersPage() {
           <button className="btn btn-primary" onClick={handleSave}>Simpan Order</button>
         </div>
       </Modal>
+
+      <ConfirmModal
+        show={!!itemToDelete}
+        title="Hapus Order"
+        message={`Yakin ingin menghapus pesanan ORD-${String(itemToDelete?.id || "").padStart(3, "0")} dari ${itemToDelete?.customer_name}? Data yang dihapus tidak dapat dikembalikan.`}
+        onConfirm={executeDelete}
+        onCancel={() => setItemToDelete(null)}
+      />
     </div>
   );
 }
