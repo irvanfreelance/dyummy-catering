@@ -4,6 +4,7 @@ import Select from "react-select";
 export interface OptionType {
   value: string | number;
   label: string;
+  category?: string; 
   color?: string; 
   isBold?: boolean; 
 }
@@ -32,6 +33,24 @@ export function SearchableSelect({ options, value, onChange, placeholder, classN
         placeholder={placeholder || "-- Pilih --"}
         isClearable
         menuPortalTarget={menuPortalTarget}
+        formatOptionLabel={(option: OptionType) => (
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", width: "100%" }}>
+            <span>{option.label}</span>
+            {option.category && (
+              <span style={{
+                background: "#f0e6fa",
+                color: "#5005A6",
+                padding: "2px 8px",
+                borderRadius: "12px",
+                fontSize: "10px",
+                fontWeight: 600,
+                marginLeft: "8px"
+              }}>
+                {option.category}
+              </span>
+            )}
+          </div>
+        )}
         styles={{
           control: (base) => ({
             ...base,

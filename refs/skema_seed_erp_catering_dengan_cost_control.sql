@@ -16,6 +16,7 @@ DROP TABLE IF EXISTS orders CASCADE;
 DROP TABLE IF EXISTS leads CASCADE;
 DROP TABLE IF EXISTS recipes CASCADE;
 DROP TABLE IF EXISTS products CASCADE;
+DROP TABLE IF EXISTS product_categories CASCADE;
 DROP TABLE IF EXISTS customers CASCADE;
 DROP TABLE IF EXISTS users CASCADE;
 
@@ -59,10 +60,16 @@ CREATE TABLE leads (
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
+CREATE TABLE product_categories (
+    id BIGSERIAL PRIMARY KEY,
+    name VARCHAR(100) NOT NULL UNIQUE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
 CREATE TABLE products (
     id BIGSERIAL PRIMARY KEY,
     name VARCHAR(255) NOT NULL,
-    category VARCHAR(100),
+    category_id BIGINT REFERENCES product_categories(id) ON DELETE SET NULL,
     description TEXT,
     price DECIMAL(15, 2) NOT NULL,
     status VARCHAR(50) DEFAULT 'Aktif',
@@ -213,10 +220,19 @@ INSERT INTO users (id, name, email, password_hash, role, status) VALUES
 (5, 'Bagas Purchasing', 'purchasing@catering.com', 'hashed_pw', 'Purchasing', 'Aktif');
 SELECT setval('users_id_seq', 5);
 
+-- 1.5 Insert Product Categories
+INSERT INTO product_categories (id, name) VALUES
+(1, 'Nasi Box'),
+(2, 'Snack Box'),
+(3, 'Prasmanan'),
+(4, 'Tumpeng'),
+(5, 'Coffee Break');
+SELECT setval('product_categories_id_seq', 5);
+
 -- 2. Insert Products (Katalog Jualan)
-INSERT INTO products (id, name, category, price, status) VALUES
-(1, 'Nasi Box Premium', 'Nasi Box', 30000.00, 'Aktif'),
-(2, 'Prasmanan VIP', 'Prasmanan', 75000.00, 'Aktif');
+INSERT INTO products (id, name, category_id, price, status) VALUES
+(1, 'Nasi Box Premium', 1, 30000.00, 'Aktif'),
+(2, 'Prasmanan VIP', 3, 75000.00, 'Aktif');
 SELECT setval('products_id_seq', 2);
 
 -- 3. Insert Master Resep / Menu (Pilihan Lauk & HPP per porsi)
