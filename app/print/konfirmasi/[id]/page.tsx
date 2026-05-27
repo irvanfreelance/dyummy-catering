@@ -141,6 +141,14 @@ export default async function OrderConfirmationPrintPage({ params }: { params: P
               </td>
             </tr>
 
+            {/* Total Pemesanan (Grand Total) */}
+            <tr>
+              <td style={{ border: "1px solid #000", padding: "10px 12px", fontSize: "14px", fontWeight: "bold" }}>Total Pemesanan</td>
+              <td style={{ border: "1px solid #000", padding: "10px 12px", fontSize: "14px", fontWeight: "bold" }}>
+                {formatRupiah(order.grand_total)}
+              </td>
+            </tr>
+
             {/* Dynamic Custom Menu Rows */}
             {items.map((item, itemIdx) => {
               const menuLines = (item.custom_menu || "")
