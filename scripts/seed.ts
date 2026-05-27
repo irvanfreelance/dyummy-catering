@@ -1,5 +1,10 @@
 import { Pool, neonConfig } from "@neondatabase/serverless";
 import ws from "ws";
+import * as path from "path";
+import * as dotenv from "dotenv";
+
+dotenv.config({ path: path.resolve(process.cwd(), ".env.local") });
+
 neonConfig.webSocketConstructor = ws;
 
 const DB = process.env.DATABASE_URL || process.env.POSTGRES_URL || "";
@@ -45,15 +50,17 @@ async function seed() {
   console.log("✓ Users");
 
   // PRODUCTS
-  await q(`INSERT INTO products (name,category,price,status,description) VALUES
-    ('Nasi Box Reguler','Nasi Box',28000,'Aktif','Nasi + 2 lauk + sayur'),
-    ('Nasi Box Premium','Nasi Box',35000,'Aktif','Nasi + 3 lauk premium'),
-    ('Snack Box Mini','Snack Box',15000,'Aktif','5 kue + minuman'),
-    ('Snack Box Premium','Snack Box',22000,'Aktif','7 kue premium + minuman'),
-    ('Prasmanan Standar','Prasmanan',65000,'Aktif','5 lauk + nasi'),
-    ('Prasmanan VIP','Prasmanan',85000,'Aktif','8 lauk + dessert'),
-    ('Tumpeng Mini','Tumpeng',450000,'Aktif','Nasi kuning 20 pax'),
-    ('Coffee Break','Coffee Break',18000,'Aktif','Kue + kopi/teh')`);
+  await q(`INSERT INTO products (name,category,price,status,description,image_url) VALUES
+    ('Paket A','Prasmanan',35000,'Aktif','1. Nasi Putih\n2. Menu Ayam (Ayam Suwir, Ayam Bakar, Ayam Asam Manis, Ayam Teriyaki)\n3. Menu Telur (Rolade, Telur Balado, Telur Semur, Telur Bumbu Kuning, Telur Cabe Hejo)\n4. Cah/Tumis (Capcay, Cah Jagung Semi Sosis, Sambal Goreng Kentang Ati, Bihun Sayur, Mie Goreng Bakso)\n5. Sup/Soto (Sup bakso, Sup Sosis, Sup Ayam, Soto Bandung)\n6. Kerupuk\n7. Buah Potong\n8. Air Mineral','https://paq7eb6vqmyqlov3.public.blob.vercel-storage.com/prasmanan.png'),
+    ('Paket B (40k)','Prasmanan',40000,'Aktif','1. Nasi Putih\n2. Menu Ayam (Ayam Suwir, Ayam Bakar, Ayam Asam Manis, Ayam Teriyaki, Sate Ayam)\n3. Menu Ikan/Telur (Ikan Kakap/Dori Asam Manis, Ikan kakap/Dori Saos Padang, Rolade, Telur Balado, Telur Semur, Telur Bumbu Kuning, Telur Cabe Hejo)\n4. Cah/Tumis (Capcay, Cah Jagung Semi Sosis, Sambal Goreng Kentang Ati, Bihun Sayur, Mie Goreng Bakso)\n5. Sup/Soto (Sup bakso, sup sosis, sup ayam, soto Bandung)\n6. Kerupuk\n7. Buah Potong\n8. Air Mineral','https://paq7eb6vqmyqlov3.public.blob.vercel-storage.com/prasmanan.png'),
+    ('Paket B (45k)','Prasmanan',45000,'Aktif','1. Nasi Putih\n2. Menu Daging (Gepuk, Sapi lada Hitam, Rendang, Sate Daging Sapi, Rolade Sapi, Semur Daging)\n3. Menu Ayam/Ikan/Telur (Ayam Suwir, Ayam Bakar, Ayam Asam Manis, Ayam Teriyaki, Sate Ayam, Ikan Kakap/Dori Asam Manis, Ikan kakap/Dori Saos Padang, Rolade, Telur Balado, Telur Semur, Telur Bumbu Kuning, Telur Cabe Hejo)\n4. Cah/ Tumis (Capcay, Cah Jagung Semi Sosis, Sambal Goreng Kentang Ati, Bihun Sayur, Mie Goreng Bakso)\n5. Sup/ Soto (Sup bakso, sup sosis, sup ayam, soto Bandung)\n6. Kerupuk\n7. Buah Potong\n8. Air Mineral','https://paq7eb6vqmyqlov3.public.blob.vercel-storage.com/prasmanan.png'),
+    ('Paket C','Prasmanan',50000,'Aktif','1. Nasi Putih\n2. Menu Daging (Gepuk, Sapi lada Hitam, Rendang, Sate Daging Sapi, Rolade Sapi, Semur Daging)\n3. Menu Ayam/Ikan (Ayam Suwir, Ayam Bakar, Ayam Asam Manis, Ayam Teriyaki, Sate Ayam, Ikan Kakap/Dori Asam Manis, Ikan kakap/Dori Saos Padang)\n4. Menu Telur (Rolade, Telur Balado, Telur Semur, Telur Bumbu Kuning, Telur Cabe Hejo)\n5. Cah/ Tumis (Capcay, cah jagung semi sosis, sambal goreng kentang-ati, bihun sayur, mie goreng)\n6. Sup/ Soto (Sup Bakso, sup sosis, sup ayam, soto Bandung)\n7. Kerupuk\n8. Buah Potong\n9. Air Mineral','https://paq7eb6vqmyqlov3.public.blob.vercel-storage.com/prasmanan.png'),
+    ('Paket Spesial Ayam','Nasi Box',30000,'Aktif','1. Nasi Putih\n2. Menu Ayam (Ayam Bakar, Ayam Goreng, Ayam Serundeng, Ayam Bumbu Hejo, Ayam Bumbu Kecap, Ayam Balado)\n3. Sayur/Tumis (Capcay, Sambal Goreng Kentang, Pecel Sayur, Orak Arik Buncis, Kimlo, Acar Wortel, Orek Tempe, Cah Tahu Buncis, Mie Goreng Bakso, Bihun Sayur)\n4. Perkedel / Tahu / Tempe (Perkedel Jagung, Perkedel Kentang, Tahu Goreng, Tempe Goreng)\n5. Lalapan\n6. Sambal\n7. Kerupuk\n8. Air Mineral Cup','https://paq7eb6vqmyqlov3.public.blob.vercel-storage.com/nasibox.png'),
+    ('Paket Spesial Sapi','Nasi Box',32000,'Aktif','1. Nasi Putih\n2. Daging Sapi (Rendang Sapi, Gepuk, Semur Sapi, Sapi Lada Hitam)\n3. Sayur/Tumis (Capcay, Sambal Goreng Kentang, Pecel Sayur, Orak Arik Buncis, Kimlo, Acar Wortel, Orek Tempe, Cah Tahu Buncis, Mie Goreng Bakso, Bihun Sayur)\n4. Perkedel / Tahu / Tempe (Perkedel Jagung, Perkedel Kentang, Tahu Goreng, Tempe Goreng)\n5. Lalapan\n6. Sambal\n7. Kerupuk\n8. Air Mineral Cup','https://paq7eb6vqmyqlov3.public.blob.vercel-storage.com/nasibox.png'),
+    ('Paket Istimewa','Nasi Box',36000,'Aktif','1. Nasi Putih\n2. Daging Sapi/Ikan/Ayam (Rendang Sapi, Gepuk, Sapi Lada Hitam, Kakap Asam Manis, Kakap Saos Padang, Ayam Bakar, Ayam Goreng, Ayam Serundeng, Ayam Bumbu Hejo, Ayam Bumbu Kecap, Ayam Balado)\n3. Telur (Telur Balado, Telur Semur, Telur Bumbu Kuning, Telur Bumbu Hejo)\n4. Sayur/Tumis (Capcay, Sambal Goreng Kentang, Pecel Sayur, Orak Arik Buncis, Kimlo, Acar Wortel, Orek Tempe, Cah Tahu Buncis, Mie Goreng Bakso, Bihun Sayur)\n5. Perkedel/Jugung/Kentang, Tahu/Tempe Goreng (Perkedel jagung, Perkedel Kentang, Tahu Goreng, Tempe Goreng, Tahu Bacem, Tempe Bacem)\n6. Lalapan\n7. Sambal\n8. Kerupuk','https://paq7eb6vqmyqlov3.public.blob.vercel-storage.com/nasibox.png'),
+    ('Paket Hemat','Nasi Box',22000,'Aktif','1. Nasi Putih\n2. Menu Ayam (Ayam Bakar, Ayam Goreng, Ayam Serundeng, Ayam Bumbu Hejo, Ayam Bumbu Kecap, Ayam Balado)\n3. Sayur/Tumis (Kimlo, Orek Tempe, Cah Tahu Buncis, Mie Goreng Bakso, Bihun Sayur)\n4. Lalapan\n5. Sambal\n6. Kerupuk','https://paq7eb6vqmyqlov3.public.blob.vercel-storage.com/nasibox.png'),
+    ('Paket Nikmat','Nasi Box',25000,'Aktif','1. Nasi Putih\n2. Menu Ayam (Ayam Bakar, Ayam Goreng, Ayam Serundeng, Ayam Bumbu Hejo, Ayam Bumbu Kecap, Ayam Balado)\n3. Sayur/Tumis (Kimlo, Orek Tempe, Cah Tahu Buncis, Mie Goreng Bakso, Bihun Sayur)\n4. Tahu/Tempe (Tahu Goreng/Bacem, Tempe Goreng/Bacem)\n5. Lalapan\n6. Sambal\n7. Kerupuk','https://paq7eb6vqmyqlov3.public.blob.vercel-storage.com/nasibox.png'),
+    ('Paket Lengkap','Nasi Box',27000,'Aktif','1. Nasi Putih\n2. Menu Ayam (Ayam Bakar, Ayam Goreng, Ayam Serundeng, Ayam Bumbu Hejo, Ayam Bumbu Kecap, Ayam Balado)\n3. Sayur/Tumis (Orak Arik Buncis, Kimlo, Acar Wortel, Orek Tempe, Cah Tahu Buncis, Mie Goreng Bakso, Bihun Sayur)\n4. Perkedel/Tahu/Tempe (Perkedel Jagung, Perkedel Kentang, Tahu Goreng, Tempe Goreng)\n5. Lalapan\n6. Sambal\n7. Kerupuk','https://paq7eb6vqmyqlov3.public.blob.vercel-storage.com/nasibox.png')`);
   console.log("✓ Products");
 
   // RECIPES
@@ -63,15 +70,15 @@ async function seed() {
     (1,'Tempe Orek','Tempe, cabai, kecap',2500),
     (2,'Sapi Lada Hitam','Daging sapi, paprika, lada hitam',22000),
     (2,'Ayam Geprek','Ayam fillet, sambal geprek',11000),
-    (2,'Tumis Udang Brokoli','Udang, brokoli, saus tiram',14000),
-    (5,'Gulai Kambing','Kambing, santan, rempah',28000),
-    (5,'Rendang Daging','Sapi, santan, bumbu rendang',26000),
+    (3,'Tumis Udang Brokoli','Udang, brokoli, saus tiram',14000),
+    (4,'Gulai Kambing','Kambing, santan, rempah',28000),
+    (4,'Rendang Daging','Sapi, santan, bumbu rendang',26000),
     (5,'Ikan Asam Pedas','Ikan tongkol, asam, cabai',12000),
     (6,'Beef Wellington','Beef tenderloin, pastry, mushroom',45000),
-    (6,'Salmon Panggang','Salmon fillet, herbs, lemon',42000),
-    (3,'Risoles Ragout','Tepung, ragout ayam',4500),
-    (4,'Kroket Kentang','Kentang, daging cincang',6000),
-    (7,'Tumpeng Kuning','Nasi kuning, aneka lauk, urap',18000)`);
+    (7,'Salmon Panggang','Salmon fillet, herbs, lemon',42000),
+    (8,'Risoles Ragout','Tepung, ragout ayam',4500),
+    (9,'Kroket Kentang','Kentang, daging cincang',6000),
+    (10,'Tumpeng Kuning','Nasi kuning, aneka lauk, urap',18000)`);
   console.log("✓ Recipes");
 
   // CUSTOMERS

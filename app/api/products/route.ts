@@ -29,12 +29,12 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
-  const { name, category, description, price, status } = await req.json();
+  const { name, category, description, price, status, image_url } = await req.json();
   const client = await pool.connect();
   try {
     const res = await client.query(
-      `INSERT INTO products (name,category,description,price,status) VALUES ($1,$2,$3,$4,$5) RETURNING *`,
-      [name, category, description, price, status || "Aktif"]
+      `INSERT INTO products (name,category,description,price,status,image_url) VALUES ($1,$2,$3,$4,$5,$6) RETURNING *`,
+      [name, category, description, price, status || "Aktif", image_url || null]
     );
     return NextResponse.json(res.rows[0], { status: 201 });
   } finally { client.release(); }

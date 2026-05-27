@@ -66,6 +66,7 @@ CREATE TABLE products (
     description TEXT,
     price DECIMAL(15, 2) NOT NULL,
     status VARCHAR(50) DEFAULT 'Aktif',
+    image_url TEXT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );

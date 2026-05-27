@@ -14,7 +14,7 @@ import { exportToExcel } from "@/lib/export";
 const STATUS_ORDER = ["Baru","Diproses","Selesai","Batal"];
 const STATUS_PAY = ["Belum Lunas","DP 50%","Lunas"];
 
-const emptyItem = () => ({ product_id: "", product_name: "", price: 0, quantity: 50, discount: 0, subtotal: 0 });
+const emptyItem = () => ({ product_id: "", product_name: "", price: 0, quantity: 50, discount: 0, subtotal: 0, custom_menu: "" });
 const emptyForm = () => ({ customer_id: "", pic_id: "", order_date: new Date().toISOString().split("T")[0], delivery_date: "", departure_time: "", venue: "", order_notes: "", status_payment: "Belum Lunas", items: [emptyItem()] });
 
 export default function OrdersPage() {
@@ -68,7 +68,11 @@ export default function OrdersPage() {
     items[idx] = { ...items[idx], [field]: val };
     if (field === "product_id") {
       const p = products.find((p: any) => String(p.id) === String(val));
-      if (p) { items[idx].price = Number(p.price); items[idx].product_name = p.name; }
+      if (p) {
+        items[idx].price = Number(p.price);
+        items[idx].product_name = p.name;
+        items[idx].custom_menu = p.description || "";
+      }
     }
     items[idx].subtotal = Number(items[idx].price) * Number(items[idx].quantity) - Number(items[idx].discount || 0);
     setForm(f => ({ ...f, items }));

@@ -54,6 +54,7 @@ const ALL_MENU = [
       { href: "/pl-dashboard", label: "P&L Dashboard", icon: PieChart },
       { href: "/targets", label: "Target & Realisasi", icon: Target },
       { href: "/settings", label: "Manajemen User", icon: Settings },
+      { href: "/products", label: "Katalog Produk", icon: Layers },
     ],
   },
 ];

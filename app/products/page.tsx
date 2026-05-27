@@ -21,7 +21,7 @@ export default function ProductsPage() {
   const [fCategory, setFCategory] = useState("");
   const [editItem, setEditItem] = useState<any>(null);
   const [itemToDelete, setItemToDelete] = useState<any>(null);
-  const [form, setForm] = useState({ name: "", category: "Nasi Box", price: 0, description: "", status: "Aktif" });
+  const [form, setForm] = useState({ name: "", category: "Nasi Box", price: 0, description: "", status: "Aktif", image_url: "" });
 
   const buildQs = useCallback((page = 1, lim = meta.limit) => {
     const p = new URLSearchParams({ page: String(page), limit: String(lim) });
@@ -40,15 +40,15 @@ export default function ProductsPage() {
 
   useEffect(() => { fetchProducts(1, meta.limit); }, [fetchProducts]);
 
-  const openAdd = () => { setEditItem(null); setForm({ name: "", category: "Nasi Box", price: 0, description: "", status: "Aktif" }); setShowModal(true); };
-  const openEdit = (p: any) => { setEditItem(p); setForm({ name: p.name, category: p.category, price: p.price, description: p.description || "", status: p.status }); setShowModal(true); };
+  const openAdd = () => { setEditItem(null); setForm({ name: "", category: "Nasi Box", price: 0, description: "", status: "Aktif", image_url: "" }); setShowModal(true); };
+  const openEdit = (p: any) => { setEditItem(p); setForm({ name: p.name, category: p.category, price: Number(p.price), description: p.description || "", status: p.status, image_url: p.image_url || "" }); setShowModal(true); };
 
   const handleSave = async () => {
     if (!form.name || form.price <= 0) return alert("Nama dan harga wajib diisi valid");
     const url = editItem ? `/api/products/${editItem.id}` : "/api/products";
     const method = editItem ? "PUT" : "POST";
     const res = await fetch(url, { method, headers: { "Content-Type": "application/json" }, body: JSON.stringify(form) });
-    if (res.ok) { setShowModal(false); setForm({ name: "", category: "Nasi Box", price: 0, description: "", status: "Aktif" }); fetchProducts(meta.page); }
+    if (res.ok) { setShowModal(false); setForm({ name: "", category: "Nasi Box", price: 0, description: "", status: "Aktif", image_url: "" }); fetchProducts(meta.page); }
   };
 
   const executeDelete = async () => {
@@ -96,15 +96,22 @@ export default function ProductsPage() {
             <div style={{ overflowX: "auto" }}>
               <table>
                 <thead>
-                  <tr><th>No.</th><th>ID</th><th>Nama Produk</th><th>Kategori</th><th>Harga Jual</th><th>Deskripsi</th><th>Status</th><th>Aksi</th></tr>
+                  <tr><th>No.</th><th>ID</th><th>Foto</th><th>Nama Produk</th><th>Kategori</th><th>Harga Jual</th><th>Menu Default / Deskripsi</th><th>Status</th><th>Aksi</th></tr>
                 </thead>
                 <tbody>
                   {rows.length === 0 ? (
-                    <tr><td colSpan={7} style={{ textAlign: "center", padding: 24, color: "#6b7280" }}>Tidak ada produk</td></tr>
+                    <tr><td colSpan={9} style={{ textAlign: "center", padding: 24, color: "#6b7280" }}>Tidak ada produk</td></tr>
                   ) : rows.map((r: any, idx: number) => (
                     <tr key={r.id}>
                       <td style={{ fontSize: 12, color: "#6b7280" }}>{(meta.page - 1) * meta.limit + idx + 1}</td>
                       <td style={{ fontSize: 12, color: "#6b7280" }}>PRD-{String(r.id).padStart(3, "0")}</td>
+                      <td>
+                        {r.image_url ? (
+                          <img src={r.image_url} alt={r.name} style={{ width: 40, height: 40, objectFit: "cover", borderRadius: 6 }} />
+                        ) : (
+                          <div style={{ width: 40, height: 40, borderRadius: 6, backgroundColor: "#f3f4f6", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 10, color: "#9ca3af" }}>No Img</div>
+                        )}
+                      </td>
                       <td style={{ fontWeight: 600 }}>{r.name}</td>
                       <td><Badge color="blue">{r.category}</Badge></td>
                       <td style={{ fontWeight: 600, color: "#5005A6" }}>{fmt(r.price)}</td>
@@ -130,7 +137,7 @@ export default function ProductsPage() {
         )}
       </div>
 
-      <Modal show={showModal} onClose={() => setShowModal(false)} title="Tambah Produk">
+      <Modal show={showModal} onClose={() => setShowModal(false)} title={editItem ? "Edit Produk" : "Tambah Produk"}>
         <FormRow>
           <FormField label="Nama Produk"><input value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} /></FormField>
           <FormField label="Kategori">
@@ -151,8 +158,57 @@ export default function ProductsPage() {
             />
           </FormField>
         </FormRow>
-        <FormField label="Deskripsi" style={{ marginBottom: 14 }}>
-          <textarea rows={2} value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} />
+        <FormRow>
+          <FormField label="Foto Produk">
+            <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
+              {form.image_url && (
+                <img 
+                  src={form.image_url} 
+                  alt="Preview" 
+                  style={{ width: 64, height: 64, objectFit: "cover", borderRadius: 8, border: "1px solid #e5e7eb" }} 
+                />
+              )}
+              <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+                <input 
+                  type="file" 
+                  accept="image/*" 
+                  onChange={async (e) => {
+                    const file = e.target.files?.[0];
+                    if (!file) return;
+                    const uploadBtn = e.target;
+                    uploadBtn.disabled = true;
+                    try {
+                      const res = await fetch(`/api/products/upload?filename=${encodeURIComponent(file.name)}`, {
+                        method: "POST",
+                        body: file
+                      });
+                      if (res.ok) {
+                        const blob = await res.json();
+                        setForm(f => ({ ...f, image_url: blob.url }));
+                      } else {
+                        alert("Gagal mengupload gambar");
+                      }
+                    } catch (err) {
+                      alert("Error: Gagal mengupload gambar");
+                    } finally {
+                      uploadBtn.disabled = false;
+                    }
+                  }} 
+                  style={{ fontSize: 12 }}
+                />
+                <span style={{ fontSize: 10, color: "#6b7280" }}>Maks. 5MB (PNG, JPG, WebP)</span>
+              </div>
+            </div>
+          </FormField>
+        </FormRow>
+        <FormField label="Rincian Menu / Lauk Default (Tampil di PDF Konfirmasi)" style={{ marginBottom: 14 }}>
+          <textarea 
+            rows={5} 
+            value={form.description} 
+            onChange={e => setForm(f => ({ ...f, description: e.target.value }))} 
+            placeholder={"Masukkan lauk pauk dipisah baris baru untuk auto-populate konfirmasi order, contoh:\n1. NASI PUTIH\n2. AYAM SERUNDENG (pot.8)\n3. CAH TAHU BUNCIS"}
+            style={{ fontFamily: "monospace", fontSize: 12, lineHeight: 1.4 }}
+          />
         </FormField>
         <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
           <button className="btn btn-secondary" onClick={() => setShowModal(false)}>Batal</button>
