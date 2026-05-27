@@ -39,11 +39,11 @@ export default function LoginSimPage() {
   };
 
   return (
-    <div style={{ minHeight: "100vh", background: "linear-gradient(135deg, #0d1f1a 0%, #0F6E56 50%, #1a4a3a 100%)", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "40px 20px" }}>
+    <div style={{ minHeight: "100vh", background: "linear-gradient(135deg, #0d011e 0%, #3b047a 50%, #1a0235 100%)", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "40px 20px" }}>
 
       {/* Background decoration */}
       <div style={{ position: "fixed", inset: 0, overflow: "hidden", pointerEvents: "none" }}>
-        <div style={{ position: "absolute", top: -120, left: -120, width: 400, height: 400, borderRadius: "50%", background: "rgba(29,158,117,0.12)", filter: "blur(60px)" }} />
+        <div style={{ position: "absolute", top: -120, left: -120, width: 400, height: 400, borderRadius: "50%", background: "rgba(80, 5, 166,0.12)", filter: "blur(60px)" }} />
         <div style={{ position: "absolute", bottom: -80, right: -80, width: 320, height: 320, borderRadius: "50%", background: "rgba(55,138,221,0.10)", filter: "blur(50px)" }} />
       </div>
 

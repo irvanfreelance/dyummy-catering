@@ -196,7 +196,7 @@ export default function ScheduleDetailPage() {
       <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 12, marginBottom: 16 }}>
         <div className="erp-card" style={{ padding: "14px 18px" }}>
           <p style={{ margin: 0, fontSize: 11, color: "#6b7280", textTransform: "uppercase", letterSpacing: "0.05em" }}>Total Omset (Revenue)</p>
-          <p style={{ margin: "4px 0 0", fontSize: 20, fontWeight: 700, color: "#1D9E75" }}>{fmt(totalRevenue)}</p>
+          <p style={{ margin: "4px 0 0", fontSize: 20, fontWeight: 700, color: "#5005A6" }}>{fmt(totalRevenue)}</p>
           <p style={{ margin: 0, fontSize: 11, color: "#6b7280" }}>{orders.length} order terkait</p>
         </div>
         <div className="erp-card" style={{ padding: "14px 18px" }}>
@@ -207,7 +207,7 @@ export default function ScheduleDetailPage() {
         <div className="erp-card" style={{ padding: "14px 18px" }}>
           <p style={{ margin: 0, fontSize: 11, color: "#6b7280", textTransform: "uppercase", letterSpacing: "0.05em" }}>Estimasi HPP Total</p>
           <p style={{ margin: "4px 0 0", fontSize: 20, fontWeight: 700, color: isOverBudget ? "#E24B4A" : "#111827" }}>{fmt(totalHPP)}</p>
-          <p style={{ margin: 0, fontSize: 11, color: isOverBudget ? "#E24B4A" : "#1D9E75" }}>
+          <p style={{ margin: 0, fontSize: 11, color: isOverBudget ? "#E24B4A" : "#5005A6" }}>
             {budgetLimit > 0 ? `${((totalHPP / totalRevenue) * 100).toFixed(1)}% dari omset` : "Belum ada data"}
           </p>
         </div>
@@ -216,11 +216,11 @@ export default function ScheduleDetailPage() {
       {/* ---- PRE-WARNING GATE ---- */}
       <div className="erp-card" style={{
         padding: "16px 20px", marginBottom: 16,
-        borderLeft: `4px solid ${isOverBudget ? "#E24B4A" : isApproved ? "#1D9E75" : "#378ADD"}`
+        borderLeft: `4px solid ${isOverBudget ? "#E24B4A" : isApproved ? "#5005A6" : "#378ADD"}`
       }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-            {isOverBudget ? <AlertTriangle size={16} color="#E24B4A" /> : <CheckCircle size={16} color={isApproved ? "#1D9E75" : "#378ADD"} />}
+            {isOverBudget ? <AlertTriangle size={16} color="#E24B4A" /> : <CheckCircle size={16} color={isApproved ? "#5005A6" : "#378ADD"} />}
             <span style={{ fontWeight: 600, fontSize: 14, color: isOverBudget ? "#E24B4A" : "#111827" }}>
               {isOverBudget
                 ? "⚠ ANGGARAN MELEBIHI BATAS — REVISI MENU SEKARANG"
@@ -231,7 +231,7 @@ export default function ScheduleDetailPage() {
                     : "Menghitung ulang HPP..."}
             </span>
           </div>
-          <span style={{ fontWeight: 700, fontSize: 14, color: isOverBudget ? "#E24B4A" : "#1D9E75" }}>
+          <span style={{ fontWeight: 700, fontSize: 14, color: isOverBudget ? "#E24B4A" : "#5005A6" }}>
             {hppPct.toFixed(1)}% / 100%
           </span>
         </div>
@@ -243,7 +243,7 @@ export default function ScheduleDetailPage() {
               ? "linear-gradient(90deg, #E24B4A, #f87171)"
               : hppPct > 80
                 ? "linear-gradient(90deg, #BA7517, #f59e0b)"
-                : "linear-gradient(90deg, #1D9E75, #34d399)",
+                : "linear-gradient(90deg, #5005A6, #34d399)",
             transition: "width 0.4s ease, background 0.3s ease"
           }} />
         </div>
@@ -290,7 +290,7 @@ export default function ScheduleDetailPage() {
                     <td style={{ fontWeight: 600 }}>{m.menu_name}</td>
                     <td style={{ textAlign: "center" }}>{m.quantity_pax} porsi</td>
                     <td style={{ textAlign: "right", color: "#6b7280" }}>{fmt(m.standard_cost)}</td>
-                    <td style={{ textAlign: "right", fontWeight: 700, color: "#1D9E75" }}>{fmt(m.hpp_subtotal)}</td>
+                    <td style={{ textAlign: "right", fontWeight: 700, color: "#5005A6" }}>{fmt(m.hpp_subtotal)}</td>
                     <td>
                       <button style={{ background: "none", border: "none", cursor: "pointer", color: "#E24B4A", padding: "2px 6px" }}
                         onClick={() => handleRemoveMenu(m.id)}>
@@ -331,7 +331,7 @@ export default function ScheduleDetailPage() {
                     <td style={{ textAlign: "center" }}>{ci.quantity}</td>
                     <td style={{ textAlign: "center", color: "#6b7280" }}>{ci.uom}</td>
                     <td style={{ textAlign: "right", color: "#6b7280" }}>{fmt(ci.estimated_price)}</td>
-                    <td style={{ textAlign: "right", fontWeight: 700, color: "#1D9E75" }}>{fmt(ci.subtotal)}</td>
+                    <td style={{ textAlign: "right", fontWeight: 700, color: "#5005A6" }}>{fmt(ci.subtotal)}</td>
                     <td>
                       <button style={{ background: "none", border: "none", cursor: "pointer", color: "#E24B4A", padding: "2px 6px" }}
                         onClick={() => handleRemoveCustomItem(ci.id)}>
@@ -355,7 +355,7 @@ export default function ScheduleDetailPage() {
         {(menus.length > 0 || customItems.length > 0) && (
           <div style={{ padding: "12px 20px", background: "#f9fafb", borderTop: "2px solid #e5e7eb", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
             <span style={{ fontWeight: 600, fontSize: 13 }}>Total Estimasi HPP</span>
-            <span style={{ fontWeight: 800, fontSize: 18, color: isOverBudget ? "#E24B4A" : "#1D9E75" }}>{fmt(totalHPP)}</span>
+            <span style={{ fontWeight: 800, fontSize: 18, color: isOverBudget ? "#E24B4A" : "#5005A6" }}>{fmt(totalHPP)}</span>
           </div>
         )}
       </div>
@@ -408,7 +408,7 @@ export default function ScheduleDetailPage() {
             {orders.map((o: any) => (
               <div key={o.order_id} style={{ display: "flex", justifyContent: "space-between", padding: "6px 0", borderBottom: "1px solid #f3f4f6", fontSize: 13 }}>
                 <span style={{ fontWeight: 600 }}>ORD-{o.order_id} — {o.customer}</span>
-                <span style={{ color: "#1D9E75", fontWeight: 700 }}>{fmt(o.total)}</span>
+                <span style={{ color: "#5005A6", fontWeight: 700 }}>{fmt(o.total)}</span>
               </div>
             ))}
           </div>
@@ -424,8 +424,8 @@ export default function ScheduleDetailPage() {
               style={{
                 padding: "8px 16px", border: "none", background: "none", cursor: "pointer",
                 fontWeight: 600, fontSize: 13,
-                borderBottom: bomMode === mode ? "2px solid #1D9E75" : "2px solid transparent",
-                color: bomMode === mode ? "#1D9E75" : "#6b7280",
+                borderBottom: bomMode === mode ? "2px solid #5005A6" : "2px solid transparent",
+                color: bomMode === mode ? "#5005A6" : "#6b7280",
                 marginBottom: -2,
               }}>
               {mode === "resep" ? "🍽 Dari Master Resep" : "✏️ Bahan Baku Custom"}

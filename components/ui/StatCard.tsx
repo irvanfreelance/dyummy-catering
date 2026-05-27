@@ -8,7 +8,7 @@ interface StatCardProps {
   icon?: LucideIcon;
 }
 
-export function StatCard({ label, value, sub, color = "#1D9E75", icon: Icon }: StatCardProps) {
+export function StatCard({ label, value, sub, color = "#5005A6", icon: Icon }: StatCardProps) {
   return (
     <div style={{
       background: "white",

@@ -107,7 +107,7 @@ export default function ProductsPage() {
                       <td style={{ fontSize: 12, color: "#6b7280" }}>PRD-{String(r.id).padStart(3, "0")}</td>
                       <td style={{ fontWeight: 600 }}>{r.name}</td>
                       <td><Badge color="blue">{r.category}</Badge></td>
-                      <td style={{ fontWeight: 600, color: "#1D9E75" }}>{fmt(r.price)}</td>
+                      <td style={{ fontWeight: 600, color: "#5005A6" }}>{fmt(r.price)}</td>
                       <td style={{ fontSize: 11, color: "#6b7280", maxWidth: 200, textOverflow: "ellipsis", overflow: "hidden", whiteSpace: "nowrap" }}>{r.description || "-"}</td>
                       <td><Badge color={r.status === "Aktif" ? "green" : "red"}>{r.status}</Badge></td>
                       <td>

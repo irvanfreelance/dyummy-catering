@@ -12,7 +12,7 @@ import { Pagination } from "@/components/ui/Pagination";
 import { SearchableSelect } from "@/components/ui/SearchableSelect";
 import { exportToExcel } from "@/lib/export";
 
-const C = { primary: "#1D9E75" };
+const C = { primary: "#5005A6" };
 
 const EMPTY_FORM = {
   name: "", phone: "", email: "", type: "Perorangan", address: "", notes: "",

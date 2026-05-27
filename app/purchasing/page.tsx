@@ -148,8 +148,8 @@ export default function PurchasingPage() {
   const tabStyle = (t: string) => ({
     padding: "10px 20px", border: "none", background: "none", cursor: "pointer",
     fontWeight: 600, fontSize: 13,
-    borderBottom: activeTab === t ? "2px solid #1D9E75" : "2px solid transparent",
-    color: activeTab === t ? "#1D9E75" : "#6b7280",
+    borderBottom: activeTab === t ? "2px solid #5005A6" : "2px solid transparent",
+    color: activeTab === t ? "#5005A6" : "#6b7280",
     marginBottom: -2,
   } as React.CSSProperties);
 
@@ -220,7 +220,7 @@ export default function PurchasingPage() {
                       ) : prRows.map((r: any, idx: number) => (
                         <tr key={r.id}>
                           <td style={{ fontSize: 12, color: "#6b7280" }}>{(prMeta.page - 1) * prMeta.limit + idx + 1}</td>
-                          <td style={{ fontWeight: 700, fontSize: 12, color: "#1D9E75" }}>PR-{String(r.id).padStart(4, "0")}</td>
+                          <td style={{ fontWeight: 700, fontSize: 12, color: "#5005A6" }}>PR-{String(r.id).padStart(4, "0")}</td>
                           <td style={{ fontSize: 12 }}>{String(r.target_date || "").slice(0, 10)}</td>
                           <td style={{ fontSize: 12 }}>{r.chef_name || "-"}</td>
                           <td style={{ textAlign: "right", fontWeight: 700 }}>{fmt(r.total_pr_value)}</td>
@@ -235,7 +235,7 @@ export default function PurchasingPage() {
                                 </button>
                               )}
                               {r.has_po && (
-                                <span style={{ fontSize: 11, color: "#1D9E75", fontWeight: 600 }}>✓ PO Dibuat</span>
+                                <span style={{ fontSize: 11, color: "#5005A6", fontWeight: 600 }}>✓ PO Dibuat</span>
                               )}
                               <a href={`/print/pr/${r.id}`} target="_blank" rel="noreferrer">
                                 <button className="btn btn-secondary btn-sm" style={{ display: "flex", alignItems: "center", gap: 4 }}>
@@ -311,10 +311,10 @@ export default function PurchasingPage() {
                             <td style={{ fontSize: 12 }}>{String(r.po_date).slice(0, 10)}</td>
                             <td style={{ fontSize: 12, color: "#6b7280" }}>{String(r.target_date || "").slice(0, 10)}</td>
                             <td style={{ textAlign: "right", fontWeight: 600 }}>{fmt(r.estimated_cost)}</td>
-                            <td style={{ textAlign: "right", fontWeight: 700, color: r.total_actual_cost > 0 ? (isOver ? "#E24B4A" : "#1D9E75") : "#6b7280" }}>
+                            <td style={{ textAlign: "right", fontWeight: 700, color: r.total_actual_cost > 0 ? (isOver ? "#E24B4A" : "#5005A6") : "#6b7280" }}>
                               {r.total_actual_cost > 0 ? fmt(r.total_actual_cost) : "-"}
                             </td>
-                            <td style={{ textAlign: "right", fontWeight: 700, color: isOver ? "#E24B4A" : "#1D9E75" }}>
+                            <td style={{ textAlign: "right", fontWeight: 700, color: isOver ? "#E24B4A" : "#5005A6" }}>
                               {r.total_actual_cost > 0 ? (isOver ? "" : "+") + fmt(variance) : "-"}
                             </td>
                             <td><Badge color={statusBadgeColor(r.status_cost)}>{r.status_cost}</Badge></td>
@@ -377,7 +377,7 @@ export default function PurchasingPage() {
                 border: `1px solid ${Number(realisasiForm.total_actual_cost) > Number(selectedPO.estimated_cost) ? "#fecaca" : "#bbf7d0"}`,
                 borderRadius: 8, padding: "10px 14px", marginBottom: 12
               }}>
-                <p style={{ margin: 0, fontSize: 13, fontWeight: 700, color: Number(realisasiForm.total_actual_cost) > Number(selectedPO.estimated_cost) ? "#E24B4A" : "#1D9E75" }}>
+                <p style={{ margin: 0, fontSize: 13, fontWeight: 700, color: Number(realisasiForm.total_actual_cost) > Number(selectedPO.estimated_cost) ? "#E24B4A" : "#5005A6" }}>
                   {Number(realisasiForm.total_actual_cost) > Number(selectedPO.estimated_cost)
                     ? `⚠ OVERBUDGET: +${fmt(Number(realisasiForm.total_actual_cost) - Number(selectedPO.estimated_cost))} dari estimasi`
                     : `✓ Dalam batas: hemat ${fmt(Number(selectedPO.estimated_cost) - Number(realisasiForm.total_actual_cost))}`

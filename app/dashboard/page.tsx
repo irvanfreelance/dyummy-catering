@@ -13,7 +13,7 @@ import { StatCard } from "@/components/ui/StatCard";
 import { fmt, fmtShort } from "@/lib/utils";
 
 const C = {
-  primary: "#1D9E75",
+  primary: "#5005A6",
   secondary: "#378ADD",
   coral: "#D85A30",
   warning: "#BA7517",
@@ -260,10 +260,10 @@ export default function DashboardPage() {
             {scheduleAlerts.length === 0 && poAlerts.length === 0 ? (
               <div className="alert-success">
                 <div style={{ display: "flex", gap: 8, alignItems: "flex-start" }}>
-                  <CheckCircle size={15} color="#0F6E56" style={{ flexShrink: 0, marginTop: 1 }} />
+                  <CheckCircle size={15} color="#3b047a" style={{ flexShrink: 0, marginTop: 1 }} />
                   <div>
-                    <p style={{ fontWeight: 700, color: "#0F6E56", fontSize: 12 }}>Semua sistem normal</p>
-                    <p style={{ fontSize: 11, color: "#0F6E56", marginTop: 2 }}>
+                    <p style={{ fontWeight: 700, color: "#3b047a", fontSize: 12 }}>Semua sistem normal</p>
+                    <p style={{ fontSize: 11, color: "#3b047a", marginTop: 2 }}>
                       Tidak ada jadwal overbudget atau variance belanja.
                     </p>
                   </div>

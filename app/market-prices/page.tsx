@@ -20,7 +20,7 @@ const initPrices = [
   { id: 5, name: "Beras", category: "Pokok", uom: "Kg", lastPrice: 14000, currentPrice: 14500, updatedBy: "Bagas", updatedAt: "2026-05-15", change: 3.6 },
 ];
 
-const C = { primary: "#1D9E75", danger: "#E24B4A", warning: "#BA7517", success: "#639922" };
+const C = { primary: "#5005A6", danger: "#E24B4A", warning: "#BA7517", success: "#639922" };
 
 export default function MarketPricesPage() {
   const [prices, setPrices] = useState(initPrices);

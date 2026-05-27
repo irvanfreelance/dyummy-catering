@@ -171,7 +171,7 @@ export default function LeadsPage() {
                       <td><Badge color="blue">{r.source}</Badge></td>
                       <td>
                         <select value={r.status} onChange={e => handleStatusChange(r.id, e.target.value)}
-                          style={{ border: "none", background: "transparent", fontSize: 12, fontWeight: 600, cursor: "pointer", padding: 0, width: "auto", color: r.status === "Closing" ? "#1D9E75" : r.status === "Reject" ? "#E24B4A" : "#374151" }}>
+                          style={{ border: "none", background: "transparent", fontSize: 12, fontWeight: 600, cursor: "pointer", padding: 0, width: "auto", color: r.status === "Closing" ? "#5005A6" : r.status === "Reject" ? "#E24B4A" : "#374151" }}>
                           {STATUSES.map(s => <option key={s}>{s}</option>)}
                         </select>
                       </td>
@@ -228,7 +228,7 @@ export default function LeadsPage() {
               value={form.customer_id} onChange={v => setForm(f => ({ ...f, customer_id: v }))}
               options={[
                 { value: "", label: "-- Pilih --" },
-                { value: "new", label: "+ Tambah Baru (via WA)", color: "#1D9E75", isBold: true },
+                { value: "new", label: "+ Tambah Baru (via WA)", color: "#5005A6", isBold: true },
                 ...customers.map((c: any) => ({ value: c.id, label: c.name }))
               ]}
               menuPortalTarget={typeof document !== "undefined" ? document.body : null}

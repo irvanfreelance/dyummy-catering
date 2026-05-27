@@ -11,7 +11,7 @@ import { SearchableSelect } from "@/components/ui/SearchableSelect";
 import { fmt } from "@/lib/utils";
 import { exportToExcel } from "@/lib/export";
 
-const C = { primary: "#1D9E75" };
+const C = { primary: "#5005A6" };
 
 const EMPTY_FORM = { product_id: "", menu_name: "", ingredients: "", standard_cost: "" };
 

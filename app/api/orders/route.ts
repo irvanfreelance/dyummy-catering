@@ -31,7 +31,8 @@ export async function GET(req: NextRequest) {
         SELECT o.*,c.name AS customer_name,u.name AS pic_name,
           (SELECT json_agg(json_build_object(
             'id',oi.id,'product_id',oi.product_id,'product_name',pr.name,
-            'price',oi.price,'quantity',oi.quantity,'discount',oi.discount,'subtotal',oi.subtotal
+            'price',oi.price,'quantity',oi.quantity,'discount',oi.discount,'subtotal',oi.subtotal,
+            'custom_menu',oi.custom_menu
           )) FROM order_items oi LEFT JOIN products pr ON oi.product_id=pr.id WHERE oi.order_id=o.id) AS items
         FROM orders o JOIN customers c ON o.customer_id=c.id LEFT JOIN users u ON o.pic_id=u.id
         ${where} ORDER BY o.delivery_date DESC, o.id DESC LIMIT $${idx} OFFSET $${idx+1}`,
@@ -59,8 +60,8 @@ export async function POST(req: NextRequest) {
     for (const item of (items || [])) {
       const subtotal = item.price * item.quantity - (item.discount || 0);
       await client.query(
-        `INSERT INTO order_items (order_id,product_id,price,quantity,discount,subtotal) VALUES ($1,$2,$3,$4,$5,$6)`,
-        [orderId, item.product_id, item.price, item.quantity, item.discount || 0, subtotal]
+        `INSERT INTO order_items (order_id,product_id,price,quantity,discount,subtotal,custom_menu) VALUES ($1,$2,$3,$4,$5,$6,$7)`,
+        [orderId, item.product_id, item.price, item.quantity, item.discount || 0, subtotal, item.custom_menu || null]
       );
     }
     await client.query("COMMIT");

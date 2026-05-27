@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useState, useCallback } from "react";
-import { Plus, Printer, Trash2, Download } from "lucide-react";
+import Link from "next/link";
+import { Plus, Printer, Trash2, Download, Eye, FileText } from "lucide-react";
 import { Badge } from "@/components/ui/Badge";
 import { Modal } from "@/components/ui/Modal";
 import { ConfirmModal } from "@/components/ui/ConfirmModal";
@@ -116,7 +117,7 @@ export default function OrdersPage() {
       {/* Summary mini cards */}
       <div style={{ display: "flex", gap: 10, marginBottom: 12, flexWrap: "wrap" }}>
         {[
-          { label: "Total Nilai (halaman ini)", val: fmt(totalRevenue), color: "#1D9E75" },
+          { label: "Total Nilai (halaman ini)", val: fmt(totalRevenue), color: "#5005A6" },
           { label: "Order Aktif", val: activeCount, color: "#378ADD" },
           { label: "Belum Lunas", val: unpaidCount, color: "#E24B4A" },
         ].map(c => (
@@ -162,18 +163,26 @@ export default function OrdersPage() {
                   ) : rows.map((o: any, idx: number) => (
                     <tr key={o.id}>
                       <td style={{ fontSize: 12, color: "#6b7280" }}>{(meta.page - 1) * meta.limit + idx + 1}</td>
-                      <td style={{ fontWeight: 700, color: "#1D9E75", fontSize: 12 }}>ORD-{String(o.id).padStart(3, "0")}</td>
+                      <td style={{ fontWeight: 700, color: "#5005A6", fontSize: 12 }}>ORD-{String(o.id).padStart(3, "0")}</td>
                       <td style={{ fontWeight: 500 }}>{o.customer_name}</td>
                       <td style={{ fontSize: 12, color: "#6b7280" }}>{o.pic_name || "-"}</td>
                       <td style={{ fontSize: 12 }}>{String(o.delivery_date || "").slice(0, 10)}</td>
                       <td style={{ fontSize: 11, color: "#6b7280" }}>{(o.items || []).length} item</td>
-                      <td style={{ fontWeight: 700, color: "#1D9E75" }}>{fmt(o.grand_total)}</td>
+                      <td style={{ fontWeight: 700, color: "#5005A6" }}>{fmt(o.grand_total)}</td>
                       <td><Badge color={statusBadgeColor(o.status_order)}>{o.status_order}</Badge></td>
                       <td><Badge color={statusBadgeColor(o.status_payment)}>{o.status_payment}</Badge></td>
                       <td>
                         <div style={{ display: "flex", gap: 4 }}>
-                          <button className="btn btn-secondary btn-sm" onClick={() => window.open(`/print/order/${o.id}`, "_blank")} title="Print">
-                            <Printer size={11} /> Print
+                          <Link href={`/orders/${o.id}`}>
+                            <button className="btn btn-secondary btn-sm" title="Detail / Edit">
+                              <Eye size={11} /> Detail
+                            </button>
+                          </Link>
+                          <button className="btn btn-secondary btn-sm" onClick={() => window.open(`/print/konfirmasi/${o.id}`, "_blank")} title="Konfirmasi PDF">
+                            <FileText size={11} /> Konfirmasi
+                          </button>
+                          <button className="btn btn-secondary btn-sm" onClick={() => window.open(`/print/order/${o.id}`, "_blank")} title="Print Invoice">
+                            <Printer size={11} /> Invoice
                           </button>
                           <button className="btn btn-secondary btn-sm" onClick={() => setItemToDelete(o)} title="Hapus">
                             <Trash2 size={11} color="#E24B4A" />
@@ -273,7 +282,7 @@ export default function OrdersPage() {
                 ))}
                 <tr style={{ background: "#f9fafb" }}>
                   <td colSpan={3} style={{ fontWeight: 700, fontSize: 13 }}>GRAND TOTAL</td>
-                  <td style={{ fontWeight: 700, color: "#1D9E75", fontSize: 15 }}>{fmt(grandTotal)}</td>
+                  <td style={{ fontWeight: 700, color: "#5005A6", fontSize: 15 }}>{fmt(grandTotal)}</td>
                   <td />
                 </tr>
               </tbody>

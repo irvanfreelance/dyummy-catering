@@ -11,7 +11,7 @@ import { Badge } from "@/components/ui/Badge";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { fmt, statusBadgeColor } from "@/lib/utils";
 
-const C = { primary: "#1D9E75", coral: "#D85A30", warning: "#BA7517", secondary: "#378ADD", success: "#639922" };
+const C = { primary: "#5005A6", coral: "#D85A30", warning: "#BA7517", secondary: "#378ADD", success: "#639922" };
 const PIE_COLORS = [C.coral, C.warning, C.primary];
 
 export default function PLDashboardPage() {
@@ -144,7 +144,7 @@ export default function PLDashboardPage() {
       <div className="erp-card">
         <p style={{ fontSize: 13, fontWeight: 700, marginBottom: 12 }}>Leakage Log — Catatan Kebocoran Anggaran</p>
         {leakage.length === 0 ? (
-          <div className="alert-success"><p style={{ fontSize: 12, color: "#0F6E56", fontWeight: 600 }}>Tidak ada kebocoran anggaran</p></div>
+          <div className="alert-success"><p style={{ fontSize: 12, color: "#3b047a", fontWeight: 600 }}>Tidak ada kebocoran anggaran</p></div>
         ) : leakage.map((po: any) => (
           <div key={po.id} style={{ display: "flex", gap: 12, alignItems: "flex-start", padding: "10px 0", borderBottom: "0.5px solid #f3f4f6" }}>
             <div style={{ width: 36, height: 36, borderRadius: 8, background: "#FCEBEB", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>

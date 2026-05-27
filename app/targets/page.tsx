@@ -12,7 +12,7 @@ import { PageHeader, FormRow, FormField } from "@/components/ui/PageHeader";
 import { SearchableSelect } from "@/components/ui/SearchableSelect";
 import { fmt } from "@/lib/utils";
 
-const C = { primary: "#1D9E75", danger: "#E24B4A", warning: "#BA7517", success: "#639922" };
+const C = { primary: "#5005A6", danger: "#E24B4A", warning: "#BA7517", success: "#639922" };
 
 const KPI_OPTIONS = [
   { value: "Revenue",      label: "Revenue (Omset)",       satuan: "Rp" },
@@ -259,7 +259,7 @@ export default function TargetsPage() {
                     <th>Periode</th>
                     <th>KPI</th>
                     <th>Target</th>
-                    <th style={{ color: "#1D9E75" }}>Capaian Real ↗</th>
+                    <th style={{ color: "#5005A6" }}>Capaian Real ↗</th>
                     <th>%</th>
                     <th>Progress</th>
                     <th>Status</th>

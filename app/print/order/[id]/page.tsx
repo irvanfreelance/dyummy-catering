@@ -34,15 +34,15 @@ export default async function OrderPrintPage({ params }: { params: Promise<{ id:
     return (
       <div className="print-container" style={{ padding: "40px", maxWidth: "800px", margin: "0 auto", fontFamily: "sans-serif", color: "#333", backgroundColor: "white" }}>
         {/* Header */}
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", borderBottom: "2px solid #1D9E75", paddingBottom: "20px", marginBottom: "30px" }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", borderBottom: "2px solid #5005A6", paddingBottom: "20px", marginBottom: "30px" }}>
           <div>
-            <h1 style={{ margin: 0, fontSize: "28px", color: "#1D9E75", fontWeight: 800 }}>DYUMMY CATERING</h1>
+            <h1 style={{ margin: 0, fontSize: "28px", color: "#5005A6", fontWeight: 800 }}>DYUMMY CATERING</h1>
             <p style={{ margin: "5px 0 0", fontSize: "12px", color: "#666" }}>Jl. Kuliner Lezat No. 99, Bandung<br/>Telp: 0812-3456-7890 | IG: @dyummycatering</p>
           </div>
           <div style={{ textAlign: "right" }}>
             <h2 style={{ margin: 0, fontSize: "24px", color: "#333" }}>ORDER CONFIRMATION</h2>
             <p style={{ margin: "5px 0 0", fontSize: "14px", fontWeight: "bold" }}>#ORD-{String(order.id).padStart(4, "0")}</p>
-            <div style={{ marginTop: "10px", display: "inline-block", padding: "5px 15px", borderRadius: "20px", border: `2px solid ${isLunas ? "#1D9E75" : "#E24B4A"}`, color: isLunas ? "#1D9E75" : "#E24B4A", fontWeight: "bold", fontSize: "12px" }}>
+            <div style={{ marginTop: "10px", display: "inline-block", padding: "5px 15px", borderRadius: "20px", border: `2px solid ${isLunas ? "#5005A6" : "#E24B4A"}`, color: isLunas ? "#5005A6" : "#E24B4A", fontWeight: "bold", fontSize: "12px" }}>
               {order.status_payment.toUpperCase()}
             </div>
           </div>
@@ -72,12 +72,12 @@ export default async function OrderPrintPage({ params }: { params: Promise<{ id:
         {/* Order Items Table */}
         <table style={{ width: "100%", borderCollapse: "collapse", marginBottom: "30px", fontSize: "13px" }}>
           <thead>
-            <tr style={{ backgroundColor: "#1D9E75", color: "white" }}>
-              <th style={{ padding: "12px", textAlign: "left", border: "1px solid #1D9E75" }}>Description</th>
-              <th style={{ padding: "12px", textAlign: "center", border: "1px solid #1D9E75", width: "80px" }}>Qty</th>
-              <th style={{ padding: "12px", textAlign: "right", border: "1px solid #1D9E75", width: "120px" }}>Unit Price</th>
-              <th style={{ padding: "12px", textAlign: "right", border: "1px solid #1D9E75", width: "100px" }}>Disc.</th>
-              <th style={{ padding: "12px", textAlign: "right", border: "1px solid #1D9E75", width: "140px" }}>Amount</th>
+            <tr style={{ backgroundColor: "#5005A6", color: "white" }}>
+              <th style={{ padding: "12px", textAlign: "left", border: "1px solid #5005A6" }}>Description</th>
+              <th style={{ padding: "12px", textAlign: "center", border: "1px solid #5005A6", width: "80px" }}>Qty</th>
+              <th style={{ padding: "12px", textAlign: "right", border: "1px solid #5005A6", width: "120px" }}>Unit Price</th>
+              <th style={{ padding: "12px", textAlign: "right", border: "1px solid #5005A6", width: "100px" }}>Disc.</th>
+              <th style={{ padding: "12px", textAlign: "right", border: "1px solid #5005A6", width: "140px" }}>Amount</th>
             </tr>
           </thead>
           <tbody>
@@ -103,7 +103,7 @@ export default async function OrderPrintPage({ params }: { params: Promise<{ id:
                 </div>
               </td>
               <td style={{ padding: "12px", textAlign: "right", fontWeight: "bold", border: "1px solid #eee" }}>GRAND TOTAL</td>
-              <td style={{ padding: "12px", textAlign: "right", fontWeight: "bold", fontSize: "16px", color: "#1D9E75", border: "1px solid #eee" }}>{fmt(order.grand_total)}</td>
+              <td style={{ padding: "12px", textAlign: "right", fontWeight: "bold", fontSize: "16px", color: "#5005A6", border: "1px solid #eee" }}>{fmt(order.grand_total)}</td>
             </tr>
           </tfoot>
         </table>

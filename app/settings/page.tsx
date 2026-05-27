@@ -9,7 +9,7 @@ import { PageHeader, FormRow, FormField } from "@/components/ui/PageHeader";
 import { SearchableSelect } from "@/components/ui/SearchableSelect";
 import { statusBadgeColor, roleColor } from "@/lib/utils";
 
-const C = { primary: "#1D9E75" };
+const C = { primary: "#5005A6" };
 
 const EMPTY_FORM = { name: "", email: "", role: "CS / Sales", status: "Aktif", password: "" };
 

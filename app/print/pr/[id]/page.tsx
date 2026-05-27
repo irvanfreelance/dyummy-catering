@@ -33,7 +33,7 @@ export default async function PRPrintPage({ params }: { params: Promise<{ id: st
       : "-";
 
     const statusColor = pr.status === "Approved" || pr.status === "Sent to Purchasing"
-      ? "#1D9E75"
+      ? "#5005A6"
       : pr.status === "Rejected"
       ? "#E24B4A"
       : "#BA7517";
@@ -44,9 +44,9 @@ export default async function PRPrintPage({ params }: { params: Promise<{ id: st
         style={{ padding: "40px", maxWidth: "800px", margin: "0 auto", fontFamily: "sans-serif", color: "#333", backgroundColor: "white" }}
       >
         {/* Header */}
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", borderBottom: "2px solid #1D9E75", paddingBottom: "20px", marginBottom: "30px" }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", borderBottom: "2px solid #5005A6", paddingBottom: "20px", marginBottom: "30px" }}>
           <div>
-            <h1 style={{ margin: 0, fontSize: "28px", color: "#1D9E75", fontWeight: 800 }}>DYUMMY CATERING</h1>
+            <h1 style={{ margin: 0, fontSize: "28px", color: "#5005A6", fontWeight: 800 }}>DYUMMY CATERING</h1>
             <p style={{ margin: "5px 0 0", fontSize: "12px", color: "#666" }}>
               Jl. Kuliner Lezat No. 99, Bandung<br />
               Telp: 0812-3456-7890 | IG: @dyummycatering
@@ -88,7 +88,7 @@ export default async function PRPrintPage({ params }: { params: Promise<{ id: st
                 </tr>
                 <tr>
                   <td style={{ color: "#666" }}>Total Revenue:</td>
-                  <td style={{ fontWeight: "bold", color: "#1D9E75" }}>{fmt(pr.total_revenue || 0)}</td>
+                  <td style={{ fontWeight: "bold", color: "#5005A6" }}>{fmt(pr.total_revenue || 0)}</td>
                 </tr>
                 <tr>
                   <td style={{ color: "#666" }}>Schedule ID:</td>
@@ -102,13 +102,13 @@ export default async function PRPrintPage({ params }: { params: Promise<{ id: st
         {/* Items Table */}
         <table style={{ width: "100%", borderCollapse: "collapse", marginBottom: "30px", fontSize: "13px" }}>
           <thead>
-            <tr style={{ backgroundColor: "#1D9E75", color: "white" }}>
-              <th style={{ padding: "12px", textAlign: "left", border: "1px solid #1D9E75", width: "36px" }}>No.</th>
-              <th style={{ padding: "12px", textAlign: "left", border: "1px solid #1D9E75" }}>Nama Bahan / Item</th>
-              <th style={{ padding: "12px", textAlign: "center", border: "1px solid #1D9E75", width: "70px" }}>Qty</th>
-              <th style={{ padding: "12px", textAlign: "center", border: "1px solid #1D9E75", width: "60px" }}>Satuan</th>
-              <th style={{ padding: "12px", textAlign: "right", border: "1px solid #1D9E75", width: "130px" }}>Harga Est./Satuan</th>
-              <th style={{ padding: "12px", textAlign: "right", border: "1px solid #1D9E75", width: "130px" }}>Subtotal</th>
+            <tr style={{ backgroundColor: "#5005A6", color: "white" }}>
+              <th style={{ padding: "12px", textAlign: "left", border: "1px solid #5005A6", width: "36px" }}>No.</th>
+              <th style={{ padding: "12px", textAlign: "left", border: "1px solid #5005A6" }}>Nama Bahan / Item</th>
+              <th style={{ padding: "12px", textAlign: "center", border: "1px solid #5005A6", width: "70px" }}>Qty</th>
+              <th style={{ padding: "12px", textAlign: "center", border: "1px solid #5005A6", width: "60px" }}>Satuan</th>
+              <th style={{ padding: "12px", textAlign: "right", border: "1px solid #5005A6", width: "130px" }}>Harga Est./Satuan</th>
+              <th style={{ padding: "12px", textAlign: "right", border: "1px solid #5005A6", width: "130px" }}>Subtotal</th>
             </tr>
           </thead>
           <tbody>
@@ -148,7 +148,7 @@ export default async function PRPrintPage({ params }: { params: Promise<{ id: st
               <td style={{ padding: "12px", textAlign: "right", fontWeight: "bold", border: "1px solid #e5e7eb", color: "#374151" }}>
                 TOTAL ESTIMASI HPP
               </td>
-              <td style={{ padding: "12px", textAlign: "right", fontWeight: "bold", fontSize: "16px", color: "#1D9E75", border: "1px solid #e5e7eb" }}>
+              <td style={{ padding: "12px", textAlign: "right", fontWeight: "bold", fontSize: "16px", color: "#5005A6", border: "1px solid #e5e7eb" }}>
                 {fmt(grandTotal)}
               </td>
             </tr>

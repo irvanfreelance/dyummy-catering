@@ -29,7 +29,7 @@ When building, generating, or refactoring code for this project, you MUST strict
 * **Charts:** `recharts` — support Line, Area, Vertical Bar, Pie, and RadialBar charts.
 * **Exports:** `xlsx` for Excel downloads; print media CSS for PDF generation.
 * **Styling:** Tailwind CSS v4 with `lucide-react` icons. Font: `Source Sans 3` / `Source Sans Pro`. Clean, non-bold default weights.
-* **Color Palette:** Primary `#1D9E75`, Sidebar `#0F6E56`, Secondary `#378ADD`, Danger `#E24B4A`, Warning `#BA7517`, Success `#639922`.
+* **Color Palette:** Primary `#5005A6`, Sidebar `#3b047a`, Secondary `#378ADD`, Danger `#E24B4A`, Warning `#BA7517`, Success `#639922`.
 
 ## 4. Types & Identifiers
 

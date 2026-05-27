@@ -6,7 +6,7 @@ import { StatCard } from "@/components/ui/StatCard";
 import { Badge } from "@/components/ui/Badge";
 import { PageHeader } from "@/components/ui/PageHeader";
 
-const C = { primary: "#1D9E75", danger: "#E24B4A", warning: "#BA7517", secondary: "#378ADD", purple: "#7F77DD" };
+const C = { primary: "#5005A6", danger: "#E24B4A", warning: "#BA7517", secondary: "#378ADD", purple: "#7F77DD" };
 const COLORS = [C.primary, C.danger, C.secondary, C.purple, C.warning];
 
 export default function CSPerformancePage() {

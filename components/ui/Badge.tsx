@@ -7,7 +7,7 @@ const COLOR_MAP: Record<BadgeColor, { bg: string; text: string }> = {
   blue:   { bg: "#E6F1FB", text: "#185FA5" },
   gray:   { bg: "#F1EFE8", text: "#5F5E5A" },
   purple: { bg: "#EEEDFE", text: "#3C3489" },
-  teal:   { bg: "#E1F5EE", text: "#0F6E56" },
+  teal:   { bg: "#F0E6FA", text: "#3b047a" },
 };
 
 interface BadgeProps {

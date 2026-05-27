@@ -117,8 +117,8 @@ export default function ProductionSchedulesPage() {
                         <td>{r.chef_name}</td>
                         <td style={{ textAlign: "center" }}><Badge color="blue">{r.order_count} Orders</Badge></td>
                         <td style={{ fontWeight: 600 }}>{fmt(r.budget_limit)}</td>
-                        <td style={{ fontWeight: 600, color: r.total_estimated_hpp > 0 ? (isOver ? "#E24B4A" : "#1D9E75") : "#6b7280" }}>{fmt(r.total_estimated_hpp)}</td>
-                        <td style={{ fontWeight: 700, color: isOver ? "#E24B4A" : "#1D9E75" }}>{isOver ? "" : "+"}{fmt(variance)}</td>
+                        <td style={{ fontWeight: 600, color: r.total_estimated_hpp > 0 ? (isOver ? "#E24B4A" : "#5005A6") : "#6b7280" }}>{fmt(r.total_estimated_hpp)}</td>
+                        <td style={{ fontWeight: 700, color: isOver ? "#E24B4A" : "#5005A6" }}>{isOver ? "" : "+"}{fmt(variance)}</td>
                         <td><Badge color={statusBadgeColor(r.status)}>{r.status}</Badge></td>
                         <td>
                           <div style={{ display: "flex", gap: 6, alignItems: "center" }}>

@@ -130,8 +130,8 @@ export function XlsxImportModal({
         {/* Header */}
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "16px 20px", borderBottom: "1px solid #e5e7eb" }}>
           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-            <div style={{ width: 36, height: 36, borderRadius: 10, background: "#1D9E7520", display: "flex", alignItems: "center", justifyContent: "center" }}>
-              <FileSpreadsheet size={18} color="#1D9E75" />
+            <div style={{ width: 36, height: 36, borderRadius: 10, background: "#5005A620", display: "flex", alignItems: "center", justifyContent: "center" }}>
+              <FileSpreadsheet size={18} color="#5005A6" />
             </div>
             <div>
               <h3 style={{ margin: 0, fontSize: 15, fontWeight: 700, color: "#111827" }}>Import {entityLabel} dari Excel</h3>
@@ -158,9 +158,9 @@ export function XlsxImportModal({
                 <div style={{
                   width: 22, height: 22, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center",
                   fontSize: 11, fontWeight: 700,
-                  background: done ? "#1D9E75" : active ? "#1D9E7520" : "#f3f4f6",
-                  color: done ? "white" : active ? "#1D9E75" : "#9ca3af",
-                  border: active ? "2px solid #1D9E75" : "2px solid transparent",
+                  background: done ? "#5005A6" : active ? "#5005A620" : "#f3f4f6",
+                  color: done ? "white" : active ? "#5005A6" : "#9ca3af",
+                  border: active ? "2px solid #5005A6" : "2px solid transparent",
                 }}>
                   {done ? "✓" : i + 1}
                 </div>
@@ -212,7 +212,7 @@ export function XlsxImportModal({
                   textAlign: "center", cursor: "pointer", transition: "all 0.2s",
                   background: "#fafafa",
                 }}
-                onMouseEnter={e => (e.currentTarget.style.borderColor = "#1D9E75")}
+                onMouseEnter={e => (e.currentTarget.style.borderColor = "#5005A6")}
                 onMouseLeave={e => (e.currentTarget.style.borderColor = "#d1d5db")}
               >
                 <Upload size={32} color="#9ca3af" style={{ marginBottom: 12 }} />
@@ -236,7 +236,7 @@ export function XlsxImportModal({
             <div>
               <div style={{ marginBottom: 12, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                  <FileSpreadsheet size={16} color="#1D9E75" />
+                  <FileSpreadsheet size={16} color="#5005A6" />
                   <span style={{ fontSize: 13, fontWeight: 600, color: "#111827" }}>{fileName}</span>
                   <span style={{ fontSize: 12, color: "#6b7280" }}>— {parsedRows.length} baris</span>
                 </div>
@@ -285,13 +285,13 @@ export function XlsxImportModal({
           {step === "result" && result && (
             <div style={{ textAlign: "center", padding: "20px 0" }}>
               <div style={{ width: 64, height: 64, borderRadius: "50%", background: "#f0fdf4", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 16px" }}>
-                <CheckCircle size={32} color="#1D9E75" />
+                <CheckCircle size={32} color="#5005A6" />
               </div>
               <h3 style={{ margin: "0 0 8px", fontSize: 18, fontWeight: 700, color: "#111827" }}>Import Selesai!</h3>
               <p style={{ margin: "0 0 20px", fontSize: 13, color: "#6b7280" }}>Data berhasil diproses</p>
               <div style={{ display: "flex", gap: 12, justifyContent: "center", marginBottom: 20 }}>
                 <div style={{ padding: "14px 24px", background: "#f0fdf4", borderRadius: 12, border: "1px solid #bbf7d0" }}>
-                  <p style={{ margin: 0, fontSize: 24, fontWeight: 800, color: "#1D9E75" }}>{result.inserted}</p>
+                  <p style={{ margin: 0, fontSize: 24, fontWeight: 800, color: "#5005A6" }}>{result.inserted}</p>
                   <p style={{ margin: 0, fontSize: 12, color: "#166534" }}>Baris ditambahkan</p>
                 </div>
                 <div style={{ padding: "14px 24px", background: "#fffbeb", borderRadius: 12, border: "1px solid #fde68a" }}>

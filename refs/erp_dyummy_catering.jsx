@@ -16,7 +16,7 @@ import {
 } from "lucide-react";
 
 const COLORS = {
-  primary: "#1D9E75", primaryDark: "#0F6E56",
+  primary: "#5005A6", primaryDark: "#3b047a",
   secondary: "#378ADD", warning: "#BA7517",
   danger: "#E24B4A", success: "#639922",
   purple: "#7F77DD", coral: "#D85A30",
@@ -24,7 +24,7 @@ const COLORS = {
   white: "#ffffff", border: "#e5e7eb",
   textPrimary: "#1a1a1a", textSecondary: "#6b7280",
   bgSecondary: "#f9fafb", bgTertiary: "#f3f4f6",
-  sidebar: "#0F6E56",
+  sidebar: "#3b047a",
 };
 const FONT = "'Source Sans 3','Source Sans Pro',sans-serif";
 
@@ -41,7 +41,7 @@ const globalStyle = `
   td{border-bottom:0.5px solid #f3f4f6;color:#374151;}
   tr:hover td{background:#f9fafb;}
   input,select,textarea{font-family:${FONT};font-size:13px;border:1px solid #d1d5db;border-radius:8px;padding:8px 12px;outline:none;width:100%;background:white;color:#1a1a1a;}
-  input:focus,select:focus,textarea:focus{border-color:#1D9E75;box-shadow:0 0 0 3px rgba(29,158,117,0.1);}
+  input:focus,select:focus,textarea:focus{border-color:#5005A6;box-shadow:0 0 0 3px rgba(80, 5, 166,0.1);}
   label{font-size:12px;font-weight:600;color:#374151;display:block;margin-bottom:4px;}
   button{font-family:${FONT};cursor:pointer;border:none;border-radius:8px;padding:8px 16px;font-size:13px;font-weight:500;transition:all 0.15s;}
   @media(max-width:768px){
@@ -141,7 +141,7 @@ const Badge = ({ children, color="gray" }) => {
   const colors = {
     green:{bg:"#EAF3DE",text:"#3B6D11"},red:{bg:"#FCEBEB",text:"#A32D2D"},
     yellow:{bg:"#FAEEDA",text:"#854F0B"},blue:{bg:"#E6F1FB",text:"#185FA5"},
-    gray:{bg:"#F1EFE8",text:"#5F5E5A"},purple:{bg:"#EEEDFE",text:"#3C3489"},teal:{bg:"#E1F5EE",text:"#0F6E56"},
+    gray:{bg:"#F1EFE8",text:"#5F5E5A"},purple:{bg:"#EEEDFE",text:"#3C3489"},teal:{bg:"#F0E6FA",text:"#3b047a"},
   };
   const c = colors[color]||colors.gray;
   return <span style={{ background:c.bg,color:c.text,padding:"2px 10px",borderRadius:20,fontSize:11,fontWeight:600,whiteSpace:"nowrap" }}>{children}</span>;
@@ -456,12 +456,12 @@ const Dashboard = () => {
                 </div>
               </div>
             ))}
-            <div style={{ background:"#E1F5EE",border:"1px solid #9FE1CB",borderRadius:8,padding:"10px 14px" }}>
+            <div style={{ background:"#F0E6FA",border:"1px solid #D3BDF3",borderRadius:8,padding:"10px 14px" }}>
               <div style={{ display:"flex",gap:8,alignItems:"flex-start" }}>
-                <CheckCircle size={16} color="#0F6E56" style={{ flexShrink:0,marginTop:1 }}/>
+                <CheckCircle size={16} color="#3b047a" style={{ flexShrink:0,marginTop:1 }}/>
                 <div>
-                  <p style={{ fontWeight:600,color:"#0F6E56",fontSize:12 }}>Jadwal Produksi 19 Mei — Approved</p>
-                  <p style={{ fontSize:11,color:"#0F6E56",marginTop:2 }}>Est. HPP Rp 4.1Jt dalam batas 50% dari revenue Rp 9Jt.</p>
+                  <p style={{ fontWeight:600,color:"#3b047a",fontSize:12 }}>Jadwal Produksi 19 Mei — Approved</p>
+                  <p style={{ fontSize:11,color:"#3b047a",marginTop:2 }}>Est. HPP Rp 4.1Jt dalam batas 50% dari revenue Rp 9Jt.</p>
                 </div>
               </div>
             </div>
@@ -821,8 +821,8 @@ const ChefSchedule = () => {
         );
       })}
       <Modal show={showModal} onClose={()=>setShowModal(false)} title="Buat Jadwal Menu Produksi" width={580}>
-        <div style={{ background:"#E1F5EE",borderRadius:8,padding:12,marginBottom:14 }}>
-          <p style={{ fontSize:12,color:"#0F6E56",fontWeight:600 }}>Budget akan otomatis dihitung 50% dari total revenue order yang dipilih</p>
+        <div style={{ background:"#F0E6FA",borderRadius:8,padding:12,marginBottom:14 }}>
+          <p style={{ fontSize:12,color:"#3b047a",fontWeight:600 }}>Budget akan otomatis dihitung 50% dari total revenue order yang dipilih</p>
         </div>
         <FormField label="Tanggal Produksi"><input type="date"/></FormField>
         <div style={{ margin:"12px 0 6px",fontSize:12,fontWeight:700 }}>Pilih Order (Agregasi)</div>

@@ -26,7 +26,7 @@ export const ROLES: RoleConfig[] = [
     key: "super_admin",
     label: "Super Admin",
     description: "Akses penuh ke semua fitur ERP & CRM",
-    color: "#1D9E75",
+    color: "#5005A6",
     bgColor: "#f0fdf4",
     initials: "SA",
     firstPage: "/dashboard",
