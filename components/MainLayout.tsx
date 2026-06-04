@@ -88,6 +88,27 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
     if (isMobile) setSidebarOpen(false);
   }, [pathname, isMobile]);
 
+  // Route protection and landing redirect based on role config
+  useEffect(() => {
+    if (loading || isPublicPage) return;
+
+    const allowedHrefs = roleConfig.allowedHrefs;
+    const currentPath = pathname || "";
+    const isAllowed = allowedHrefs === "*" || (allowedHrefs as string[]).some(href => {
+      if (currentPath === href) return true;
+      if (href !== "/" && currentPath.startsWith(href + "/")) return true;
+      return false;
+    });
+
+    if (currentPath === "/" || currentPath === "/dashboard") {
+      if (activeRole !== "super_admin") {
+        router.replace(roleConfig.firstPage);
+      }
+    } else if (!isAllowed) {
+      router.replace(roleConfig.firstPage);
+    }
+  }, [pathname, activeRole, roleConfig.firstPage, roleConfig.allowedHrefs, loading, isPublicPage, router]);
+
   if (loading && !isPublicPage) {
     return (
       <div style={{
