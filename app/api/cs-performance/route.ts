@@ -3,6 +3,15 @@ import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/auth";
 import pool from "@/lib/db";
 
+function formatDateRange(weekStartStr: string) {
+  if (!weekStartStr) return "";
+  const start = new Date(weekStartStr);
+  const end = new Date(start);
+  end.setDate(start.getDate() + 6);
+  const f = (d: Date) => String(d.getDate()).padStart(2, '0') + '/' + String(d.getMonth() + 1).padStart(2, '0');
+  return `${f(start)} - ${f(end)}`;
+}
+
 export async function GET(req: NextRequest) {
   const session = await getServerSession(authOptions);
   const userRole = (session?.user as any)?.role;
@@ -77,19 +86,29 @@ export async function GET(req: NextRequest) {
         [startDate, endDate, userId]
       );
 
-      // Weekly breakdown inside range
+      // Weekly breakdown inside range (ensuring zero weeks are included)
       const weeklyChartRes = await client.query(`
+        WITH weeks AS (
+          SELECT generate_series(
+            date_trunc('week', $1::date)::date,
+            date_trunc('week', $2::date)::date,
+            '1 week'::interval
+          )::date AS week_start
+        )
         SELECT 
-          date_trunc('week', l.lead_date)::date::text AS week_start,
+          w.week_start::text AS week_start,
           u.id as cs_id,
           u.name as cs_name,
           COUNT(l.id) as leads,
           COUNT(CASE WHEN l.status='Closing' THEN 1 END) as closing
-        FROM users u
-        LEFT JOIN leads l ON l.pic_id = u.id AND l.lead_date >= $1 AND l.lead_date <= $2
+        FROM weeks w
+        CROSS JOIN users u
+        LEFT JOIN leads l ON l.pic_id = u.id 
+          AND date_trunc('week', l.lead_date)::date = w.week_start
+          AND l.lead_date >= $1 AND l.lead_date <= $2
         WHERE u.id = $3 AND u.status = 'Aktif'
-        GROUP BY date_trunc('week', l.lead_date), u.id, u.name
-        ORDER BY week_start ASC
+        GROUP BY w.week_start, u.id, u.name
+        ORDER BY w.week_start ASC
       `, [startDate, endDate, userId]);
 
       const weeksSet = new Set<string>();
@@ -104,6 +123,7 @@ export async function GET(req: NextRequest) {
           const closing = row ? Number(row.closing) : 0;
           return {
             week: `Pekan ${i + 1}`,
+            dateRange: formatDateRange(week_start),
             leads,
             closing,
             rate: leads > 0 ? Number(((closing / leads) * 100).toFixed(1)) : 0
@@ -180,17 +200,27 @@ export async function GET(req: NextRequest) {
       );
 
       const weeklyChartRes = await client.query(`
+        WITH weeks AS (
+          SELECT generate_series(
+            date_trunc('week', $1::date)::date,
+            date_trunc('week', $2::date)::date,
+            '1 week'::interval
+          )::date AS week_start
+        )
         SELECT 
-          date_trunc('week', l.lead_date)::date::text AS week_start,
+          w.week_start::text AS week_start,
           u.id as cs_id,
           u.name as cs_name,
           COUNT(l.id) as leads,
           COUNT(CASE WHEN l.status='Closing' THEN 1 END) as closing
-        FROM users u
-        LEFT JOIN leads l ON l.pic_id = u.id AND l.lead_date >= $1 AND l.lead_date <= $2
+        FROM weeks w
+        CROSS JOIN users u
+        LEFT JOIN leads l ON l.pic_id = u.id 
+          AND date_trunc('week', l.lead_date)::date = w.week_start
+          AND l.lead_date >= $1 AND l.lead_date <= $2
         WHERE u.role = 'CS / Sales' AND u.status = 'Aktif'
-        GROUP BY date_trunc('week', l.lead_date), u.id, u.name
-        ORDER BY week_start ASC
+        GROUP BY w.week_start, u.id, u.name
+        ORDER BY w.week_start ASC
       `, [startDate, endDate]);
 
       const weeksSet = new Set<string>();
@@ -205,6 +235,7 @@ export async function GET(req: NextRequest) {
           const closing = row ? Number(row.closing) : 0;
           return {
             week: `Pekan ${i + 1}`,
+            dateRange: formatDateRange(week_start),
             leads,
             closing,
             rate: leads > 0 ? Number(((closing / leads) * 100).toFixed(1)) : 0

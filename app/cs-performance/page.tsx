@@ -6,6 +6,7 @@ import { TrendingUp, AlertTriangle, BarChart2, Target } from "lucide-react";
 import { StatCard } from "@/components/ui/StatCard";
 import { Badge } from "@/components/ui/Badge";
 import { PageHeader } from "@/components/ui/PageHeader";
+import { Pagination } from "@/components/ui/Pagination";
 
 const C = { primary: "#5005A6", danger: "#E24B4A", warning: "#BA7517", secondary: "#378ADD", purple: "#7F77DD" };
 const COLORS = [C.primary, C.danger, C.secondary, C.purple, C.warning];
@@ -20,6 +21,12 @@ export default function CSPerformancePage() {
   const [startDate, setStartDate] = useState(mtdStr);
   const [endDate, setEndDate] = useState(todayStr);
   const [activeTab, setActiveTab] = useState<'ringkasan' | 'evaluasi'>('ringkasan');
+  const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(10);
+
+  useEffect(() => {
+    setPage(1);
+  }, [startDate, endDate, activeTab]);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -266,41 +273,95 @@ export default function CSPerformancePage() {
       </div>
 
       {/* Weekly Detail */}
-      <div className="erp-card">
-        <p style={{ fontSize: 13, fontWeight: 700, marginBottom: 14 }}>Detail Per Pekan</p>
-        <div style={{ overflowX: "auto" }}>
-          <table>
-            <thead>
-              <tr>
-                <th>Nama CS</th>
-                {csData[0]?.weekly?.map((_: any, i: number) => (
-                  <Fragment key={`wk-${i}`}>
-                    <th>Pekan {i + 1} Lead</th>
-                    <th>Closing</th>
-                    <th>Rate</th>
-                  </Fragment>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {csData.map((cs: any) => (
-                <tr key={cs.id}>
-                  <td style={{ fontWeight: 600 }}>{cs.name}</td>
-                  {(cs.weekly || []).map((w: any, i: number) => (
-                    <Fragment key={`cell-${cs.id}-${i}`}>
-                      <td style={{ textAlign: "center" }}>{w.leads}</td>
-                      <td style={{ textAlign: "center" }}>{w.closing}</td>
-                      <td style={{ textAlign: "center", fontWeight: 600, color: w.rate >= 30 ? C.primary : w.rate >= 25 ? C.warning : C.danger }}>
-                        {w.rate}%
-                      </td>
-                    </Fragment>
-                  ))}
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
+      {(() => {
+        const tableRows: any[] = [];
+        const numWeeks = csData[0]?.weekly?.length || 0;
+        for (let i = numWeeks - 1; i >= 0; i--) {
+          for (const cs of csData) {
+            const w = cs.weekly[i];
+            if (w) {
+              tableRows.push({
+                week: w.week,
+                dateRange: w.dateRange,
+                csName: cs.name,
+                leads: w.leads,
+                closing: w.closing,
+                rate: w.rate,
+              });
+            }
+          }
+        }
+
+        const totalRows = tableRows.length;
+        const totalPages = Math.ceil(totalRows / limit) || 1;
+        const offset = (page - 1) * limit;
+        const paginatedRows = tableRows.slice(offset, offset + limit);
+
+        return (
+          <div className="erp-card" style={{ display: "flex", flexDirection: "column" }}>
+            <div style={{ flex: 1 }}>
+              <p style={{ fontSize: 13, fontWeight: 700, marginBottom: 14 }}>Detail Per Pekan</p>
+              <div style={{ overflowX: "auto" }}>
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Periode / Pekan</th>
+                      <th>Nama CS</th>
+                      <th style={{ textAlign: "center" }}>Lead</th>
+                      <th style={{ textAlign: "center" }}>Closing</th>
+                      <th style={{ textAlign: "center" }}>Closing Rate</th>
+                      <th>Status</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {paginatedRows.length === 0 ? (
+                      <tr>
+                        <td colSpan={6} style={{ textAlign: "center", padding: "20px", color: "#6b7280" }}>
+                          Tidak ada data pekan
+                        </td>
+                      </tr>
+                    ) : (
+                      paginatedRows.map((row, idx) => {
+                        const perf = row.rate >= 30 ? { label: "Bagus", color: "green" as const } : row.rate >= 25 ? { label: "Standar", color: "yellow" as const } : { label: "Under Perform", color: "red" as const };
+                        return (
+                          <tr key={`${row.week}-${row.csName}-${idx}`}>
+                            <td style={{ fontWeight: 500 }}>
+                              <span style={{ fontWeight: 600 }}>{row.week}</span>
+                              {row.dateRange && <span style={{ color: "#6b7280", fontSize: 11, marginLeft: 6 }}>({row.dateRange})</span>}
+                            </td>
+                            <td style={{ fontWeight: 500 }}>{row.csName}</td>
+                            <td style={{ textAlign: "center" }}>{row.leads}</td>
+                            <td style={{ textAlign: "center" }}>{row.closing}</td>
+                            <td style={{ textAlign: "center", fontWeight: 700, color: row.rate >= 30 ? C.primary : row.rate >= 25 ? C.warning : C.danger }}>
+                              {row.rate}%
+                            </td>
+                            <td>
+                              <Badge color={perf.color}>{perf.label}</Badge>
+                            </td>
+                          </tr>
+                        );
+                      })
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+            {totalRows > 0 && (
+              <Pagination
+                page={page}
+                totalPages={totalPages}
+                total={totalRows}
+                limit={limit}
+                onChange={setPage}
+                onLimitChange={(lim) => {
+                  setLimit(lim);
+                  setPage(1);
+                }}
+              />
+            )}
+          </div>
+        );
+      })()}
       </div>
       )}
     </div>
