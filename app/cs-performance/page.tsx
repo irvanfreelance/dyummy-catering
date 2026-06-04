@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useState, Fragment } from "react";
+import { useRole } from "@/contexts/RoleContext";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
 import { TrendingUp, AlertTriangle, BarChart2, Target } from "lucide-react";
 import { StatCard } from "@/components/ui/StatCard";
@@ -13,6 +14,7 @@ export default function CSPerformancePage() {
   const todayStr = new Date().toISOString().slice(0, 10);
   const mtdStr = todayStr.slice(0, 8) + '01';
   
+  const { activeRole } = useRole();
   const [data, setData] = useState<any>({ csData: [], chartData: [], dailyStats: {}, recentCustomers: [], recentOrders: [] });
   const [loading, setLoading] = useState(true);
   const [startDate, setStartDate] = useState(mtdStr);
@@ -194,13 +196,17 @@ export default function CSPerformancePage() {
         <h2 style={{ fontSize: 18, fontWeight: 600, marginBottom: 16 }}>Evaluasi Performa CS</h2>
 
       {loading ? (
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 10, marginBottom: 16 }}>
-          {[1,2,3,4].map(i => <div key={i} className="skeleton" style={{ height: 82, borderRadius: 12 }} />)}
+        <div style={{ display: "grid", gridTemplateColumns: activeRole === "cs_sales" ? "repeat(2,1fr)" : "repeat(4,1fr)", gap: 10, marginBottom: 16 }}>
+          {(activeRole === "cs_sales" ? [1,2] : [1,2,3,4]).map(i => <div key={i} className="skeleton" style={{ height: 82, borderRadius: 12 }} />)}
         </div>
       ) : (
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(160px,1fr))", gap: 10, marginBottom: 16 }}>
-          <StatCard label="CS Terbaik" value={best?.name?.split(" ")[0] || "-"} sub={`CR: ${best?.monthRate || 0}%`} icon={TrendingUp} color={C.primary} />
-          <StatCard label="Perlu Perhatian" value={worst?.name?.split(" ")[0] || "-"} sub={`CR: ${worst?.monthRate || 0}%`} icon={AlertTriangle} color={C.danger} />
+          {activeRole !== "cs_sales" && (
+            <>
+              <StatCard label="CS Terbaik" value={best?.name?.split(" ")[0] || "-"} sub={`CR: ${best?.monthRate || 0}%`} icon={TrendingUp} color={C.primary} />
+              <StatCard label="Perlu Perhatian" value={worst?.name?.split(" ")[0] || "-"} sub={`CR: ${worst?.monthRate || 0}%`} icon={AlertTriangle} color={C.danger} />
+            </>
+          )}
           <StatCard label="Avg Closing Rate" value={avgRate + "%"} sub="Target: ≥30%" icon={BarChart2} color={C.secondary} />
           <StatCard label="Total Closing" value={totalClosing + " order"} icon={Target} color={C.purple} />
         </div>
