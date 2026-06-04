@@ -20,11 +20,18 @@ export default function CSPerformancePage() {
   const [activeTab, setActiveTab] = useState<'ringkasan' | 'evaluasi'>('ringkasan');
 
   useEffect(() => {
+    const controller = new AbortController();
     setLoading(true);
-    fetch(`/api/cs-performance?startDate=${startDate}&endDate=${endDate}`)
+    fetch(`/api/cs-performance?startDate=${startDate}&endDate=${endDate}`, { signal: controller.signal })
       .then(r => r.json())
       .then(setData)
-      .finally(() => setLoading(false));
+      .catch(err => {
+        if (err.name !== "AbortError") console.error(err);
+      })
+      .finally(() => {
+        if (!controller.signal.aborted) setLoading(false);
+      });
+    return () => controller.abort();
   }, [startDate, endDate]);
 
   const { csData = [], chartData = [], dailyStats = {}, recentCustomers = [], recentOrders = [] } = data;
@@ -199,7 +206,7 @@ export default function CSPerformancePage() {
         </div>
       )}
 
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginBottom: 16 }}>
+      <div className="cs-grid-split">
         <div className="erp-card">
           <p style={{ fontSize: 13, fontWeight: 700, marginBottom: 14 }}>Tren Closing Rate (%) per Pekan</p>
           {chartData.length > 0 ? (

@@ -1,36 +1,61 @@
 "use client";
 
-import { createContext, useContext, useState, useEffect, ReactNode } from "react";
+import { createContext, useContext, ReactNode } from "react";
+import { useSession, signOut } from "next-auth/react";
 import { RoleKey, DEFAULT_ROLE } from "@/lib/roleConfig";
-
-const STORAGE_KEY = "dyummy_active_role";
 
 interface RoleContextType {
   activeRole: RoleKey;
-  setActiveRole: (role: RoleKey) => void;
+  user: {
+    id: string;
+    name: string;
+    email: string;
+    role: string;
+  } | null;
+  loading: boolean;
+  logout: () => void;
 }
 
 const RoleContext = createContext<RoleContextType>({
   activeRole: DEFAULT_ROLE,
-  setActiveRole: () => {},
+  user: null,
+  loading: true,
+  logout: () => {},
 });
 
+const mapDbRoleToKey = (role: string): RoleKey => {
+  switch (role) {
+    case "Super Admin": return "super_admin";
+    case "Owner": return "owner";
+    case "CS / Sales": return "cs_sales";
+    case "Chef / Kitchen": return "chef";
+    case "Purchasing": return "purchasing";
+    case "Finance / Keuangan": return "finance";
+    default: return "super_admin";
+  }
+};
+
 export function RoleProvider({ children }: { children: ReactNode }) {
-  const [activeRole, setActiveRoleState] = useState<RoleKey>(DEFAULT_ROLE);
+  const { data: session, status } = useSession();
 
-  // Restore from localStorage on mount
-  useEffect(() => {
-    const stored = localStorage.getItem(STORAGE_KEY) as RoleKey | null;
-    if (stored) setActiveRoleState(stored);
-  }, []);
+  const loading = status === "loading";
+  const user = session?.user
+    ? {
+        id: (session.user as any).id,
+        name: session.user.name || "",
+        email: session.user.email || "",
+        role: (session.user as any).role || "",
+      }
+    : null;
 
-  const setActiveRole = (role: RoleKey) => {
-    setActiveRoleState(role);
-    localStorage.setItem(STORAGE_KEY, role);
+  const activeRole = user ? mapDbRoleToKey(user.role) : DEFAULT_ROLE;
+
+  const logout = () => {
+    signOut({ callbackUrl: "/login" });
   };
 
   return (
-    <RoleContext.Provider value={{ activeRole, setActiveRole }}>
+    <RoleContext.Provider value={{ activeRole, user, loading, logout }}>
       {children}
     </RoleContext.Provider>
   );

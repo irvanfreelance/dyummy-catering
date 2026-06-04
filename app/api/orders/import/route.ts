@@ -1,7 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
+import { getServerSession } from "next-auth/next";
+import { authOptions } from "@/lib/auth";
 import pool from "@/lib/db";
 
 export async function POST(req: NextRequest) {
+  const session = await getServerSession(authOptions);
+  const userRole = (session?.user as any)?.role;
+  const userId = (session?.user as any)?.id;
+
   const { orders } = await req.json();
   if (!orders || !Array.isArray(orders) || orders.length === 0) {
     return NextResponse.json({ error: "Data order tidak boleh kosong" }, { status: 400 });
@@ -44,7 +50,9 @@ export async function POST(req: NextRequest) {
 
       // 1.5 Identify pic_id (CS/Sales)
       let picId = null;
-      if (order.pic_name) {
+      if (userRole === "CS / Sales") {
+        picId = userId;
+      } else if (order.pic_name) {
         const picRes = await client.query("SELECT id FROM users WHERE name ILIKE $1 LIMIT 1", [order.pic_name]);
         if (picRes.rows.length) {
           picId = picRes.rows[0].id;

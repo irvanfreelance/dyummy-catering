@@ -38,16 +38,20 @@ export default function DashboardPage() {
   const [error, setError] = useState(false);
 
   useEffect(() => {
-    fetch("/api/dashboard/summary")
+    const controller = new AbortController();
+    fetch("/api/dashboard/summary", { signal: controller.signal })
       .then((r) => r.json())
       .then((d) => {
         setData(d);
         setLoading(false);
       })
-      .catch(() => {
-        setError(true);
-        setLoading(false);
+      .catch((err) => {
+        if (err.name !== "AbortError") {
+          setError(true);
+          setLoading(false);
+        }
       });
+    return () => controller.abort();
   }, []);
 
   const activeOrders = data?.activeOrders ?? 0;
@@ -130,7 +134,7 @@ export default function DashboardPage() {
       </div>
 
       {/* Charts Row */}
-      <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr", gap: 16, marginBottom: 16 }}>
+      <div className="dashboard-grid-charts">
         {/* Bar Chart — Revenue vs BPP */}
         <div className="erp-card">
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
@@ -221,7 +225,7 @@ export default function DashboardPage() {
       </div>
 
       {/* Summary Row + Alerts */}
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+      <div className="dashboard-grid-alerts">
         {/* Summary Stats */}
         <div className="erp-card">
           <p style={{ fontSize: 13, fontWeight: 700, marginBottom: 14 }}>Ringkasan 7 Hari</p>

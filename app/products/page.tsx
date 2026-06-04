@@ -18,8 +18,16 @@ export default function ProductsPage() {
   const [meta, setMeta] = useState({ total: 0, page: 1, limit: 10, totalPages: 1 });
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
+  const [searchInput, setSearchInput] = useState("");
   const [search, setSearch] = useState("");
   const [fCategory, setFCategory] = useState("");
+
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setSearch(searchInput);
+    }, 300);
+    return () => clearTimeout(handler);
+  }, [searchInput]);
   const [editItem, setEditItem] = useState<any>(null);
   const [itemToDelete, setItemToDelete] = useState<any>(null);
   const [form, setForm] = useState({ name: "", category_id: "", price: 0, description: "", status: "Aktif", image_url: "" });
@@ -32,15 +40,19 @@ export default function ProductsPage() {
   const [catToDelete, setCatToDelete] = useState<any>(null);
 
   // ---- Fetch Categories ----
-  const fetchCategories = useCallback(() => {
-    fetch("/api/categories")
+  const fetchCategories = useCallback((signal?: AbortSignal) => {
+    fetch("/api/categories", { signal })
       .then(r => r.json())
       .then(data => setCategories(data))
-      .catch(e => console.error("Gagal memuat kategori:", e));
+      .catch(e => {
+        if (e.name !== "AbortError") console.error("Gagal memuat kategori:", e);
+      });
   }, []);
 
   useEffect(() => {
-    fetchCategories();
+    const controller = new AbortController();
+    fetchCategories(controller.signal);
+    return () => controller.abort();
   }, [fetchCategories]);
 
   // ---- Fetch Products ----
@@ -51,18 +63,23 @@ export default function ProductsPage() {
     return p.toString();
   }, [search, fCategory, meta.limit]);
 
-  const fetchProducts = useCallback((page = 1, lim = meta.limit) => {
+  const fetchProducts = useCallback((page = 1, lim = meta.limit, signal?: AbortSignal) => {
     setLoading(true);
-    fetch(`/api/products?${buildQs(page, lim)}`)
+    fetch(`/api/products?${buildQs(page, lim)}`, { signal })
       .then(r => r.json())
       .then(d => { setRows(d.data || []); setMeta({ total: d.total, page: d.page, limit: d.limit, totalPages: d.totalPages }); })
+      .catch(e => {
+        if (e.name !== "AbortError") console.error("Gagal memuat produk:", e);
+      })
       .finally(() => setLoading(false));
   }, [buildQs, meta.limit]);
 
   useEffect(() => {
+    const controller = new AbortController();
     if (activeTab === "products") {
-      fetchProducts(1, meta.limit);
+      fetchProducts(1, meta.limit, controller.signal);
     }
+    return () => controller.abort();
   }, [fetchProducts, activeTab]);
 
   // ---- Product CRUD Handlers ----
@@ -226,8 +243,8 @@ export default function ProductsPage() {
           <div className="erp-card" style={{ marginBottom: 12, padding: "12px 16px" }}>
             <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
               <input
-                value={search}
-                onChange={e => setSearch(e.target.value)}
+                value={searchInput}
+                onChange={e => setSearchInput(e.target.value)}
                 placeholder="🔍 Cari nama produk..."
                 style={{ width: 250 }}
               />
@@ -237,7 +254,7 @@ export default function ProductsPage() {
                 options={[{ value: "", label: "Semua Kategori" }, ...categories.map(c => ({ value: String(c.id), label: c.name }))]}
                 style={{ width: 160 }}
               />
-              <button className="btn btn-secondary btn-sm" onClick={() => { setSearch(""); setFCategory(""); }}>
+              <button className="btn btn-secondary btn-sm" onClick={() => { setSearchInput(""); setSearch(""); setFCategory(""); }}>
                 Reset
               </button>
             </div>

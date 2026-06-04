@@ -2,6 +2,7 @@
 import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
 import { Plus, Printer, Trash2, Download, Eye, FileText, Upload } from "lucide-react";
+import { useSession } from "next-auth/react";
 import { Badge } from "@/components/ui/Badge";
 import { Modal } from "@/components/ui/Modal";
 import { ConfirmModal } from "@/components/ui/ConfirmModal";
@@ -16,9 +17,13 @@ const STATUS_ORDER = ["Baru","Diproses","Selesai","Batal"];
 const STATUS_PAY = ["Belum Lunas","DP 50%","Lunas"];
 
 const emptyItem = () => ({ product_id: "", product_name: "", price: 0, quantity: 50, discount: 0, subtotal: 0, custom_menu: "" });
-const emptyForm = () => ({ customer_id: "", pic_id: "", order_date: new Date().toISOString().split("T")[0], delivery_date: "", departure_time: "", venue: "", order_notes: "", status_payment: "Belum Lunas", items: [emptyItem()] });
+const emptyForm = (userRole?: string, userId?: string) => ({ customer_id: "", pic_id: userRole === "CS / Sales" ? String(userId) : "", order_date: new Date().toISOString().split("T")[0], delivery_date: "", departure_time: "", venue: "", order_notes: "", status_payment: "Belum Lunas", items: [emptyItem()] });
 
 export default function OrdersPage() {
+  const { data: session } = useSession();
+  const userRole = (session?.user as any)?.role;
+  const userId = (session?.user as any)?.id;
+
   const [rows, setRows] = useState<any[]>([]);
   const [meta, setMeta] = useState({ total: 0, page: 1, limit: 10, totalPages: 1 });
   const [customers, setCustomers] = useState<any[]>([]);
@@ -27,12 +32,26 @@ export default function OrdersPage() {
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [itemToDelete, setItemToDelete] = useState<any>(null);
-  const [form, setForm] = useState(emptyForm());
+  const [form, setForm] = useState(() => emptyForm(userRole, userId));
+
+  useEffect(() => {
+    if (userRole === "CS / Sales" && !form.pic_id) {
+      setForm(f => ({ ...f, pic_id: String(userId) }));
+    }
+  }, [userRole, userId, form.pic_id]);
   const [fStatus, setFStatus] = useState("");
   const [fPay, setFPay] = useState("");
+  const [searchInput, setSearchInput] = useState("");
   const [search, setSearch] = useState("");
   const [fDateFrom, setFDateFrom] = useState("");
   const [fDateTo, setFDateTo] = useState("");
+
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setSearch(searchInput);
+    }, 300);
+    return () => clearTimeout(handler);
+  }, [searchInput]);
 
   const [previewOrders, setPreviewOrders] = useState<any[]>([]);
   const [showPreview, setShowPreview] = useState(false);
@@ -307,25 +326,51 @@ export default function OrdersPage() {
     if (search) p.set("search", search);
     if (fStatus) p.set("status_order", fStatus);
     if (fPay) p.set("status_payment", fPay);
+    if (userRole === "CS / Sales") {
+      p.set("pic_id", String(userId));
+    }
     if (fDateFrom) p.set("date_from", fDateFrom);
     if (fDateTo) p.set("date_to", fDateTo);
     return p.toString();
-  }, [search, fStatus, fPay, fDateFrom, fDateTo]);
+  }, [search, fStatus, fPay, fDateFrom, fDateTo, userRole, userId, meta.limit]);
 
-  const fetchOrders = useCallback((page = 1, lim = meta.limit) => {
+  const fetchOrders = useCallback((page = 1, lim = meta.limit, signal?: AbortSignal) => {
     setLoading(true);
-    fetch(`/api/orders?${buildQs(page, lim)}`)
+    fetch(`/api/orders?${buildQs(page, lim)}`, { signal })
       .then(r => r.json())
-      .then(d => { setRows(d.data || []); setMeta({ total: d.total, page: d.page, limit: d.limit, totalPages: d.totalPages }); })
+      .then(d => {
+        setRows(d.data || []);
+        setMeta({ total: d.total, page: d.page, limit: d.limit, totalPages: d.totalPages });
+      })
+      .catch(err => {
+        if (err.name !== "AbortError") {
+          console.error(err);
+        }
+      })
       .finally(() => setLoading(false));
   }, [buildQs, meta.limit]);
 
-  useEffect(() => { fetchOrders(1, meta.limit); }, [fetchOrders]);
+  useEffect(() => {
+    const controller = new AbortController();
+    fetchOrders(1, meta.limit, controller.signal);
+    return () => controller.abort();
+  }, [fetchOrders]);
 
   useEffect(() => {
-    fetch("/api/customers?limit=100").then(r => r.json()).then(d => setCustomers(d.data || []));
-    fetch("/api/users").then(r => r.json()).then(setUsers);
-    fetch("/api/products?limit=100").then(r => r.json()).then(d => setProducts(d.data || []));
+    const controller = new AbortController();
+    fetch("/api/customers?limit=100", { signal: controller.signal })
+      .then(r => r.json())
+      .then(d => setCustomers(d.data || []))
+      .catch(() => {});
+    fetch("/api/users", { signal: controller.signal })
+      .then(r => r.json())
+      .then(setUsers)
+      .catch(() => {});
+    fetch("/api/products?limit=100", { signal: controller.signal })
+      .then(r => r.json())
+      .then(d => setProducts(d.data || []))
+      .catch(() => {});
+    return () => controller.abort();
   }, []);
 
   const totalRevenue = rows.reduce((s, o) => s + Number(o.grand_total || 0), 0);
@@ -353,8 +398,14 @@ export default function OrdersPage() {
     if (!form.customer_id || !form.delivery_date) return alert("Customer dan tanggal kirim wajib");
     if (!form.items.some(i => i.product_id)) return alert("Minimal 1 item produk");
     const validItems = form.items.filter(i => i.product_id);
-    const res = await fetch("/api/orders", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ ...form, items: validItems }) });
-    if (res.ok) { setShowModal(false); setForm(emptyForm()); fetchOrders(1); }
+    
+    const finalForm = { ...form };
+    if (userRole === "CS / Sales") {
+      finalForm.pic_id = String(userId);
+    }
+
+    const res = await fetch("/api/orders", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ ...finalForm, items: validItems }) });
+    if (res.ok) { setShowModal(false); setForm(emptyForm(userRole, userId)); fetchOrders(1); }
   };
 
   const executeDelete = async () => {
@@ -369,6 +420,9 @@ export default function OrdersPage() {
     if (search) p.set("search", search);
     if (fStatus) p.set("status_order", fStatus);
     if (fPay) p.set("status_payment", fPay);
+    if (userRole === "CS / Sales") {
+      p.set("pic_id", String(userId));
+    }
     if (fDateFrom) p.set("date_from", fDateFrom);
     if (fDateTo) p.set("date_to", fDateTo);
     const res = await fetch(`/api/orders?${p}`);
@@ -395,7 +449,7 @@ export default function OrdersPage() {
               />
             </label>
             <button className="btn btn-secondary btn-sm" onClick={handleExport}><Download size={14} /> Export Excel</button>
-            <button className="btn btn-primary" onClick={() => { setForm(emptyForm()); setShowModal(true); }}><Plus size={14} /> Buat Order</button>
+            <button className="btn btn-primary" onClick={() => { setForm(emptyForm(userRole, userId)); setShowModal(true); }}><Plus size={14} /> Buat Order</button>
           </div>
         }
       />
@@ -418,7 +472,7 @@ export default function OrdersPage() {
       {/* Filters */}
       <div className="erp-card" style={{ marginBottom: 12, padding: "12px 16px" }}>
         <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-          <input value={search} onChange={e => setSearch(e.target.value)} placeholder="🔍 Customer / venue..." style={{ width: 200 }} />
+          <input value={searchInput} onChange={e => setSearchInput(e.target.value)} placeholder="🔍 Customer / venue..." style={{ width: 200 }} />
           <SearchableSelect 
             value={fStatus} onChange={setFStatus} 
             options={[{ value: "", label: "Semua Status Order" }, ...STATUS_ORDER.map(s => ({ value: s, label: s }))]} 
@@ -431,7 +485,7 @@ export default function OrdersPage() {
           />
           <input type="date" value={fDateFrom} onChange={e => setFDateFrom(e.target.value)} style={{ width: 140 }} title="Kirim dari" />
           <input type="date" value={fDateTo} onChange={e => setFDateTo(e.target.value)} style={{ width: 140 }} title="Kirim sampai" />
-          <button className="btn btn-secondary btn-sm" onClick={() => { setSearch(""); setFStatus(""); setFPay(""); setFDateFrom(""); setFDateTo(""); }}>Reset</button>
+          <button className="btn btn-secondary btn-sm" onClick={() => { setSearchInput(""); setSearch(""); setFStatus(""); setFPay(""); setFDateFrom(""); setFDateTo(""); }}>Reset</button>
         </div>
       </div>
 
@@ -502,16 +556,18 @@ export default function OrdersPage() {
               menuPortalTarget={typeof document !== "undefined" ? document.body : null}
             />
           </FormField>
-          <FormField label="PIC CS">
-            <SearchableSelect 
-              value={form.pic_id} onChange={v => setForm(f => ({ ...f, pic_id: v }))}
-              options={[
-                { value: "", label: "-- Pilih CS --" },
-                ...users.filter((u: any) => u.role === "CS / Sales").map((u: any) => ({ value: u.id, label: u.name }))
-              ]}
-              menuPortalTarget={typeof document !== "undefined" ? document.body : null}
-            />
-          </FormField>
+          {userRole !== "CS / Sales" && (
+            <FormField label="PIC CS">
+              <SearchableSelect 
+                value={form.pic_id} onChange={v => setForm(f => ({ ...f, pic_id: v }))}
+                options={[
+                  { value: "", label: "-- Pilih CS --" },
+                  ...users.filter((u: any) => u.role === "CS / Sales").map((u: any) => ({ value: u.id, label: u.name }))
+                ]}
+                menuPortalTarget={typeof document !== "undefined" ? document.body : null}
+              />
+            </FormField>
+          )}
         </FormRow>
         <FormRow>
           <FormField label="Tanggal Order"><input type="date" value={form.order_date} onChange={e => setForm(f => ({ ...f, order_date: e.target.value }))} /></FormField>

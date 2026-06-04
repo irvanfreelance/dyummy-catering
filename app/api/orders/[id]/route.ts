@@ -1,7 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
+import { getServerSession } from "next-auth/next";
+import { authOptions } from "@/lib/auth";
 import pool from "@/lib/db";
 
-export async function GET(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const session = await getServerSession(authOptions);
+  const userRole = (session?.user as any)?.role;
+  const userId = (session?.user as any)?.id;
+
   const { id } = await params;
   const client = await pool.connect();
   try {
@@ -16,11 +22,21 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
        LEFT JOIN users u ON o.pic_id = u.id WHERE o.id = $1`, [id]
     );
     if (!res.rows.length) return NextResponse.json({ error: "Not found" }, { status: 404 });
-    return NextResponse.json(res.rows[0]);
+    
+    const order = res.rows[0];
+    if (userRole === "CS / Sales" && Number(order.pic_id) !== Number(userId)) {
+      return NextResponse.json({ error: "Access denied" }, { status: 403 });
+    }
+
+    return NextResponse.json(order);
   } finally { client.release(); }
 }
 
 export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const session = await getServerSession(authOptions);
+  const userRole = (session?.user as any)?.role;
+  const userId = (session?.user as any)?.id;
+
   const { id } = await params;
   const body = await req.json();
   const {
@@ -39,6 +55,17 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
 
   const client = await pool.connect();
   try {
+    const exist = await client.query("SELECT pic_id FROM orders WHERE id = $1", [id]);
+    if (!exist.rows.length) return NextResponse.json({ error: "Not found" }, { status: 404 });
+    if (userRole === "CS / Sales" && Number(exist.rows[0].pic_id) !== Number(userId)) {
+      return NextResponse.json({ error: "Access denied" }, { status: 403 });
+    }
+
+    let final_pic_id = pic_id;
+    if (userRole === "CS / Sales") {
+      final_pic_id = userId;
+    }
+
     await client.query("BEGIN");
     
     // 1. Recalculate grand total
@@ -50,10 +77,10 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
         customer_id=$1, pic_id=$2, order_date=$3, delivery_date=$4, 
         departure_time=$5, arrival_time=$6, venue=$7, order_notes=$8, 
         status_order=$9, status_payment=$10, grand_total=$11, updated_at=NOW() 
-       WHERE id=$12 RETURNING *`,
+      WHERE id=$12 RETURNING *`,
       [
         customer_id,
-        pic_id || null,
+        final_pic_id || null,
         order_date,
         delivery_date,
         departure_time || null,
@@ -95,10 +122,20 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
   }
 }
 
-export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+export async function DELETE(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const session = await getServerSession(authOptions);
+  const userRole = (session?.user as any)?.role;
+  const userId = (session?.user as any)?.id;
+
   const { id } = await params;
   const client = await pool.connect();
   try {
+    const exist = await client.query("SELECT pic_id FROM orders WHERE id = $1", [id]);
+    if (!exist.rows.length) return NextResponse.json({ error: "Not found" }, { status: 404 });
+    if (userRole === "CS / Sales" && Number(exist.rows[0].pic_id) !== Number(userId)) {
+      return NextResponse.json({ error: "Access denied" }, { status: 403 });
+    }
+
     await client.query("DELETE FROM orders WHERE id = $1", [id]);
     return NextResponse.json({ success: true });
   } finally { client.release(); }

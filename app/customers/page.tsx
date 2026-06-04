@@ -21,8 +21,16 @@ const EMPTY_FORM = {
 export default function CustomersPage() {
   const [rows, setRows] = useState<any[]>([]);
   const [meta, setMeta] = useState({ total: 0, page: 1, limit: 10, totalPages: 1 });
+  const [searchInput, setSearchInput] = useState("");
   const [search, setSearch] = useState("");
   const [typeFilter, setTypeFilter] = useState("");
+
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setSearch(searchInput);
+    }, 300);
+    return () => clearTimeout(handler);
+  }, [searchInput]);
   const [showModal, setShowModal] = useState(false);
   const [showImport, setShowImport] = useState(false);
   const [editItem, setEditItem] = useState<any>(null);
@@ -37,15 +45,20 @@ export default function CustomersPage() {
     return p.toString();
   }, [search, typeFilter]);
 
-  const fetchCustomers = useCallback((page = 1, lim = meta.limit) => {
+  const fetchCustomers = useCallback((page = 1, lim = meta.limit, signal?: AbortSignal) => {
     setLoading(true);
-    fetch(`/api/customers?${buildQs(page, lim)}`)
+    fetch(`/api/customers?${buildQs(page, lim)}`, { signal })
       .then(r => r.json())
       .then(d => { setRows(d.data || []); setMeta({ total: d.total, page: d.page, limit: d.limit, totalPages: d.totalPages }); })
+      .catch(e => { if (e.name !== "AbortError") console.error("Gagal memuat customer:", e); })
       .finally(() => setLoading(false));
   }, [buildQs, meta.limit]);
 
-  useEffect(() => { fetchCustomers(1, meta.limit); }, [fetchCustomers]);
+  useEffect(() => {
+    const controller = new AbortController();
+    fetchCustomers(1, meta.limit, controller.signal);
+    return () => controller.abort();
+  }, [fetchCustomers]);
 
   const openAdd = () => { setEditItem(null); setForm(EMPTY_FORM); setShowModal(true); };
   const openEdit = (c: any) => {
@@ -103,13 +116,13 @@ export default function CustomersPage() {
 
       <div className="erp-card" style={{ marginBottom: 12, padding: "12px 16px" }}>
         <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
-          <input value={search} onChange={e => setSearch(e.target.value)} placeholder="🔍 Cari nama, telepon, email..." style={{ width: 250 }} />
+          <input value={searchInput} onChange={e => setSearchInput(e.target.value)} placeholder="🔍 Cari nama, telepon, email..." style={{ width: 250 }} />
           <SearchableSelect 
             value={typeFilter} onChange={setTypeFilter} 
             options={[{ value: "", label: "Semua Tipe" }, ...["Perorangan", "Corporate", "Instansi"].map(t => ({ value: t, label: t }))]} 
             style={{ width: 160 }} 
           />
-          <button className="btn btn-secondary btn-sm" onClick={() => { setSearch(""); setTypeFilter(""); }}>Reset</button>
+          <button className="btn btn-secondary btn-sm" onClick={() => { setSearchInput(""); setSearch(""); setTypeFilter(""); }}>Reset</button>
         </div>
       </div>
 

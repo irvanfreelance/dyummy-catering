@@ -1,7 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
+import { getServerSession } from "next-auth/next";
+import { authOptions } from "@/lib/auth";
 import pool from "@/lib/db";
 
 export async function GET(req: NextRequest) {
+  const session = await getServerSession(authOptions);
+  const userRole = (session?.user as any)?.role;
+  const userId = (session?.user as any)?.id;
+
   const { searchParams: p } = new URL(req.url);
   const page = Math.max(1, Number(p.get("page") || 1));
   const limit = Math.min(100, Number(p.get("limit") || 20));
@@ -19,7 +25,17 @@ export async function GET(req: NextRequest) {
 
   if (search) { wheres.push(`(c.name ILIKE $${idx} OR l.tags ILIKE $${idx} OR l.notes ILIKE $${idx})`); vals.push(`%${search}%`); idx++; }
   if (status) { wheres.push(`l.status = $${idx}`); vals.push(status); idx++; }
-  if (pic_id) { wheres.push(`l.pic_id = $${idx}`); vals.push(pic_id); idx++; }
+  
+  if (userRole === "CS / Sales") {
+    wheres.push(`l.pic_id = $${idx}`);
+    vals.push(userId);
+    idx++;
+  } else if (pic_id) {
+    wheres.push(`l.pic_id = $${idx}`);
+    vals.push(pic_id);
+    idx++;
+  }
+  
   if (source) { wheres.push(`l.source = $${idx}`); vals.push(source); idx++; }
   if (date_from) { wheres.push(`l.lead_date >= $${idx}`); vals.push(date_from); idx++; }
   if (date_to) { wheres.push(`l.lead_date <= $${idx}`); vals.push(date_to); idx++; }
@@ -40,6 +56,10 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
+  const session = await getServerSession(authOptions);
+  const userRole = (session?.user as any)?.role;
+  const userId = (session?.user as any)?.id;
+
   const { customer_id, customer_name, customer_phone, pic_id, lead_date, source, status, tags, notes } = await req.json();
   const client = await pool.connect();
   try {
@@ -59,9 +79,14 @@ export async function POST(req: NextRequest) {
       }
     }
 
+    let final_pic_id = pic_id;
+    if (userRole === "CS / Sales") {
+      final_pic_id = userId;
+    }
+
     const res = await client.query(
       `INSERT INTO leads (customer_id,pic_id,lead_date,source,status,tags,notes) VALUES ($1,$2,$3,$4,$5,$6,$7) RETURNING *`,
-      [final_customer_id, pic_id, lead_date, source, status || "Prospek", tags, notes]
+      [final_customer_id, final_pic_id || null, lead_date, source, status || "Prospek", tags, notes]
     );
     return NextResponse.json(res.rows[0], { status: 201 });
   } finally { client.release(); }

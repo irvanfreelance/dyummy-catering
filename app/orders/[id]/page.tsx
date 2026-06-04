@@ -3,6 +3,7 @@
 import { useEffect, useState, use } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
+import { useSession } from "next-auth/react";
 import { Trash2, Save, ArrowLeft, Plus, CheckCircle2 } from "lucide-react";
 import { PageHeader, FormRow, FormField } from "@/components/ui/PageHeader";
 import { SearchableSelect } from "@/components/ui/SearchableSelect";
@@ -24,6 +25,9 @@ const emptyItem = () => ({
 export default function OrderDetailPage() {
   const { id } = useParams() as { id: string };
   const router = useRouter();
+  const { data: session } = useSession();
+  const userRole = (session?.user as any)?.role;
+  const userId = (session?.user as any)?.id;
   
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -47,19 +51,24 @@ export default function OrderDetailPage() {
   });
 
   useEffect(() => {
+    const controller = new AbortController();
+    const { signal } = controller;
+
     // Fetch master data
     Promise.all([
-      fetch("/api/customers?limit=100").then(r => r.json()),
-      fetch("/api/users").then(r => r.json()),
-      fetch("/api/products?limit=100").then(r => r.json())
+      fetch("/api/customers?limit=100", { signal }).then(r => r.json()),
+      fetch("/api/users", { signal }).then(r => r.json()),
+      fetch("/api/products?limit=100", { signal }).then(r => r.json())
     ]).then(([cData, uData, pData]) => {
       setCustomers(cData.data || []);
       setUsers(uData || []);
       setProducts(pData.data || []);
+    }).catch(err => {
+      if (err.name !== "AbortError") console.error(err);
     });
 
     // Fetch active order
-    fetch(`/api/orders/${id}`)
+    fetch(`/api/orders/${id}`, { signal })
       .then(r => {
         if (!r.ok) throw new Error("Order tidak ditemukan");
         return r.json();
@@ -84,10 +93,17 @@ export default function OrderDetailPage() {
         });
       })
       .catch(err => {
+        if (err.name === "AbortError") return;
         alert(err.message);
         router.push("/orders");
       })
-      .finally(() => setLoading(false));
+      .finally(() => {
+        if (!signal.aborted) setLoading(false);
+      });
+
+    return () => {
+      controller.abort();
+    };
   }, [id, router]);
 
   const updateItem = (idx: number, field: string, val: any) => {
@@ -209,16 +225,18 @@ export default function OrderDetailPage() {
                 ]}
               />
             </FormField>
-            <FormField label="PIC CS">
-              <SearchableSelect 
-                value={form.pic_id} 
-                onChange={v => setForm((f: any) => ({ ...f, pic_id: v }))}
-                options={[
-                  { value: "", label: "-- Pilih CS --" },
-                  ...users.filter((u: any) => u.role === "CS / Sales").map((u: any) => ({ value: String(u.id), label: u.name }))
-                ]}
-              />
-            </FormField>
+            {userRole !== "CS / Sales" && (
+              <FormField label="PIC CS">
+                <SearchableSelect 
+                  value={form.pic_id} 
+                  onChange={v => setForm((f: any) => ({ ...f, pic_id: v }))}
+                  options={[
+                    { value: "", label: "-- Pilih CS --" },
+                    ...users.filter((u: any) => u.role === "CS / Sales").map((u: any) => ({ value: String(u.id), label: u.name }))
+                  ]}
+                />
+              </FormField>
+            )}
           </FormRow>
 
           <FormRow>

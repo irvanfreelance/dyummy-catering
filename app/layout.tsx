@@ -3,6 +3,8 @@ import "./globals.css";
 import MainLayout from "@/components/MainLayout";
 import { RoleProvider } from "@/contexts/RoleContext";
 
+import SessionProviderWrapper from "@/components/SessionProviderWrapper";
+
 export const metadata: Metadata = {
   title: "Dyummy Catering ERP",
   description: "ERP & CRM System untuk Dyummy Catering — Kelola leads, order, produksi, dan keuangan dalam satu platform.",
@@ -24,9 +26,11 @@ export default function RootLayout({
         />
       </head>
       <body className="min-h-full font-sans">
-        <RoleProvider>
-          <MainLayout>{children}</MainLayout>
-        </RoleProvider>
+        <SessionProviderWrapper>
+          <RoleProvider>
+            <MainLayout>{children}</MainLayout>
+          </RoleProvider>
+        </SessionProviderWrapper>
       </body>
     </html>
   );

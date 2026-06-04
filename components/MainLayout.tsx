@@ -7,7 +7,7 @@ import {
   LayoutDashboard, Inbox, Users, ShoppingBag, BarChart2,
   CalendarDays, BookOpen, ClipboardList, TrendingUp, CreditCard,
   PieChart, Settings, Menu, X, Utensils, Target, ChefHat,
-  ShoppingCart, DollarSign, Layers, LogIn,
+  ShoppingCart, DollarSign, Layers, LogIn, LogOut,
 } from "lucide-react";
 import { useRole } from "@/contexts/RoleContext";
 import { getRoleConfig, ROLES } from "@/lib/roleConfig";
@@ -64,14 +64,13 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
   const [isMobile, setIsMobile] = useState(false);
   const pathname = usePathname();
   const router = useRouter();
-  const { activeRole, setActiveRole } = useRole();
+  const { activeRole, user, loading, logout } = useRole();
   const roleConfig = getRoleConfig(activeRole);
 
-  // Hide sidebar on login/print/login-sim pages
+  // Hide sidebar on login/print pages
   const isPublicPage =
     pathname?.startsWith("/login") ||
-    pathname?.startsWith("/print") ||
-    pathname?.startsWith("/login-sim");
+    pathname?.startsWith("/print");
 
   useEffect(() => {
     const checkMobile = () => {
@@ -88,6 +87,27 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
   useEffect(() => {
     if (isMobile) setSidebarOpen(false);
   }, [pathname, isMobile]);
+
+  if (loading && !isPublicPage) {
+    return (
+      <div style={{
+        display: "flex", minHeight: "100vh", alignItems: "center", justifyContent: "center",
+        background: "#0d011e", color: "white", flexDirection: "column", gap: 16
+      }}>
+        <div style={{
+          width: 40, height: 40, border: "3px solid rgba(255,255,255,0.2)",
+          borderTopColor: "white", borderRadius: "50%",
+          animation: "spin 1s linear infinite"
+        }} />
+        <p style={{ fontSize: 13, color: "rgba(255,255,255,0.6)" }}>Memuat sesi...</p>
+        <style>{`
+          @keyframes spin {
+            to { transform: rotate(360deg); }
+          }
+        `}</style>
+      </div>
+    );
+  }
 
   if (isPublicPage) {
     return <>{children}</>;
@@ -177,7 +197,6 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
               <p style={{ fontSize: 11, fontWeight: 600, color: "white", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
                 {roleConfig.label}
               </p>
-              <p style={{ fontSize: 9, color: "rgba(255,255,255,0.5)", marginTop: 1 }}>Mode Simulasi</p>
             </div>
           </div>
         </div>
@@ -220,46 +239,8 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
             </div>
           ))}
 
-          {/* Simulasi Login link — always visible */}
-          <div style={{ marginTop: 8, padding: "0 8px" }}>
-            <Link href="/login-sim" style={{ textDecoration: "none" }}>
-              <div style={{
-                display: "flex", alignItems: "center", gap: 9,
-                padding: "8px 8px",
-                background: pathname === "/login-sim" ? "rgba(255,255,255,0.18)" : "rgba(255,255,255,0.06)",
-                borderRadius: 8,
-                color: "rgba(255,255,255,0.7)",
-                fontSize: 12,
-                fontWeight: 500,
-                cursor: "pointer",
-                whiteSpace: "nowrap",
-                transition: "all 0.12s",
-                border: "1px dashed rgba(255,255,255,0.2)",
-              }}>
-                <LogIn size={13} style={{ flexShrink: 0 }} />
-                Ganti Peran / Role
-              </div>
-            </Link>
-          </div>
         </nav>
 
-        {/* User profile */}
-        <div style={{ padding: "12px 16px", borderTop: "1px solid rgba(255,255,255,0.12)" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-            <div style={{
-              width: 32, height: 32, borderRadius: "50%",
-              background: roleConfig.color,
-              display: "flex", alignItems: "center", justifyContent: "center",
-              fontSize: 11, fontWeight: 700, color: "white",
-            }}>
-              {roleConfig.initials}
-            </div>
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <p style={{ fontSize: 12, fontWeight: 600, color: "white", lineHeight: 1.2 }}>{roleConfig.label}</p>
-              <p style={{ fontSize: 10, color: "rgba(255,255,255,0.55)", marginTop: 1 }}>Simulasi aktif</p>
-            </div>
-          </div>
-        </div>
       </aside>
 
       {/* ── MAIN CONTENT ────────────────────────────────── */}
@@ -288,30 +269,71 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
           <div style={{ flex: 1 }}>
             <p style={{ fontSize: 13, fontWeight: 600, color: "#374151" }}>{activeLabel}</p>
           </div>
-          <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+          <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
             {/* Role chip */}
-            <Link href="/login-sim" style={{ textDecoration: "none" }}>
+            <span style={{
+              fontSize: 11,
+              background: roleConfig.bgColor,
+              color: roleConfig.color,
+              border: `1px solid ${roleConfig.color}40`,
+              padding: "4px 10px",
+              borderRadius: 20,
+              fontWeight: 600,
+              display: "flex",
+              alignItems: "center",
+              gap: 5,
+            }}>
               <span style={{
-                fontSize: 11,
-                background: roleConfig.bgColor,
-                color: roleConfig.color,
-                border: `1px solid ${roleConfig.color}40`,
-                padding: "4px 10px",
-                borderRadius: 20,
-                fontWeight: 600,
-                cursor: "pointer",
+                width: 7, height: 7, borderRadius: "50%",
+                background: roleConfig.color, display: "inline-block",
+              }} />
+              {roleConfig.label}
+            </span>
+
+            {/* Profile Avatar and Name */}
+            <div style={{ display: "flex", alignItems: "center", gap: 8, borderLeft: "1px solid #e5e7eb", paddingLeft: 12 }}>
+              <div style={{
+                width: 28, height: 28, borderRadius: "50%",
+                background: roleConfig.color,
+                display: "flex", alignItems: "center", justifyContent: "center",
+                fontSize: 10, fontWeight: 700, color: "white",
+              }}>
+                {roleConfig.initials}
+              </div>
+              {!isMobile && (
+                <span style={{ fontSize: 12, fontWeight: 600, color: "#374151" }}>
+                  {user?.name || "User"}
+                </span>
+              )}
+            </div>
+
+            {/* Logout Button */}
+            <button
+              onClick={() => logout()}
+              style={{
                 display: "flex",
                 alignItems: "center",
-                gap: 5,
-                transition: "opacity 0.15s",
-              }}>
-                <span style={{
-                  width: 7, height: 7, borderRadius: "50%",
-                  background: roleConfig.color, display: "inline-block",
-                }} />
-                {roleConfig.label}
-              </span>
-            </Link>
+                gap: 6,
+                padding: "6px 12px",
+                background: "rgba(226, 75, 74, 0.1)",
+                color: "#E24B4A",
+                border: "1px solid rgba(226, 75, 74, 0.2)",
+                borderRadius: 6,
+                fontSize: 12,
+                fontWeight: 600,
+                cursor: "pointer",
+                transition: "all 0.15s"
+              }}
+              onMouseEnter={e => {
+                e.currentTarget.style.background = "rgba(226, 75, 74, 0.2)";
+              }}
+              onMouseLeave={e => {
+                e.currentTarget.style.background = "rgba(226, 75, 74, 0.1)";
+              }}
+            >
+              <LogOut size={13} />
+              {!isMobile && <span>Keluar</span>}
+            </button>
           </div>
         </header>
 

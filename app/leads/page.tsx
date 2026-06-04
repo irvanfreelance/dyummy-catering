@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useState, useCallback } from "react";
 import { Plus, Filter, Download, Upload, Trash2 } from "lucide-react";
+import { useSession } from "next-auth/react";
 import { Badge } from "@/components/ui/Badge";
 import { Modal } from "@/components/ui/Modal";
 import { ConfirmModal } from "@/components/ui/ConfirmModal";
@@ -15,6 +16,10 @@ const STATUSES = ["Prospek","Follow Up","Negosiasi","Konfirmasi","Closing","Reje
 const SOURCES = ["WhatsApp","Instagram","Website","Referral","Walk-in"];
 
 export default function LeadsPage() {
+  const { data: session } = useSession();
+  const userRole = (session?.user as any)?.role;
+  const userId = (session?.user as any)?.id;
+
   const [rows, setRows] = useState<any[]>([]);
   const [meta, setMeta] = useState({ total: 0, page: 1, limit: 10, totalPages: 1 });
   const [customers, setCustomers] = useState<any[]>([]);
@@ -26,12 +31,20 @@ export default function LeadsPage() {
   const [itemToDelete, setItemToDelete] = useState<any>(null);
 
   // Filters
+  const [searchInput, setSearchInput] = useState("");
   const [search, setSearch] = useState("");
   const [fStatus, setFStatus] = useState("");
   const [fSource, setFSource] = useState("");
   const [fPic, setFPic] = useState("");
   const [fDateFrom, setFDateFrom] = useState("");
   const [fDateTo, setFDateTo] = useState("");
+
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setSearch(searchInput);
+    }, 300);
+    return () => clearTimeout(handler);
+  }, [searchInput]);
 
   const [form, setForm] = useState({ 
     customer_id: "", customer_name: "", customer_phone: "",
@@ -43,33 +56,63 @@ export default function LeadsPage() {
     if (search) p.set("search", search);
     if (fStatus) p.set("status", fStatus);
     if (fSource) p.set("source", fSource);
-    if (fPic) p.set("pic_id", fPic);
+    if (userRole === "CS / Sales") {
+      p.set("pic_id", String(userId));
+    } else if (fPic) {
+      p.set("pic_id", fPic);
+    }
     if (fDateFrom) p.set("date_from", fDateFrom);
     if (fDateTo) p.set("date_to", fDateTo);
     return p.toString();
-  }, [search, fStatus, fSource, fPic, fDateFrom, fDateTo]);
+  }, [search, fStatus, fSource, fPic, fDateFrom, fDateTo, userRole, userId, meta.limit]);
 
-  const fetchLeads = useCallback((page = 1, lim = meta.limit) => {
+  const fetchLeads = useCallback((page = 1, lim = meta.limit, signal?: AbortSignal) => {
     setLoading(true);
-    fetch(`/api/leads?${buildQs(page, lim)}`)
+    fetch(`/api/leads?${buildQs(page, lim)}`, { signal })
       .then(r => r.json())
-      .then(d => { setRows(d.data || []); setMeta({ total: d.total, page: d.page, limit: d.limit, totalPages: d.totalPages }); })
+      .then(d => {
+        setRows(d.data || []);
+        setMeta({ total: d.total, page: d.page, limit: d.limit, totalPages: d.totalPages });
+      })
+      .catch(err => {
+        if (err.name !== "AbortError") {
+          console.error(err);
+        }
+      })
       .finally(() => setLoading(false));
   }, [buildQs, meta.limit]);
 
-  useEffect(() => { fetchLeads(1, meta.limit); }, [fetchLeads]);
+  useEffect(() => {
+    const controller = new AbortController();
+    fetchLeads(1, meta.limit, controller.signal);
+    return () => controller.abort();
+  }, [fetchLeads]);
 
   useEffect(() => {
-    fetch("/api/customers?limit=100").then(r => r.json()).then(d => setCustomers(d.data || []));
-    fetch("/api/users").then(r => r.json()).then(setUsers);
+    const controller = new AbortController();
+    fetch("/api/customers?limit=100", { signal: controller.signal })
+      .then(r => r.json())
+      .then(d => setCustomers(d.data || []))
+      .catch(() => {});
+    fetch("/api/users", { signal: controller.signal })
+      .then(r => r.json())
+      .then(setUsers)
+      .catch(() => {});
+    return () => controller.abort();
   }, []);
 
   const handleSave = async () => {
     if (!form.customer_id) return alert("Pilih customer");
     if (form.customer_id === "new" && !form.customer_phone) return alert("Nomor WA wajib diisi untuk customer baru");
+    
+    const finalForm = { ...form };
+    if (userRole === "CS / Sales") {
+      finalForm.pic_id = String(userId);
+    }
+
     const url = editItem ? `/api/leads/${editItem.id}` : "/api/leads";
     const method = editItem ? "PUT" : "POST";
-    const res = await fetch(url, { method, headers: { "Content-Type": "application/json" }, body: JSON.stringify(form) });
+    const res = await fetch(url, { method, headers: { "Content-Type": "application/json" }, body: JSON.stringify(finalForm) });
     if (res.ok) { setShowModal(false); setEditItem(null); fetchLeads(1); }
   };
 
@@ -85,15 +128,16 @@ export default function LeadsPage() {
     fetchLeads(meta.page, meta.limit);
   };
 
-  const statusCounts: Record<string, number> = {};
-  STATUSES.forEach(s => { statusCounts[s] = 0; });
-
   const handleExport = async () => {
     const p = new URLSearchParams({ page: "1", limit: "1000" });
     if (search) p.set("search", search);
     if (fStatus) p.set("status", fStatus);
     if (fSource) p.set("source", fSource);
-    if (fPic) p.set("pic_id", fPic);
+    if (userRole === "CS / Sales") {
+      p.set("pic_id", String(userId));
+    } else if (fPic) {
+      p.set("pic_id", fPic);
+    }
     if (fDateFrom) p.set("date_from", fDateFrom);
     if (fDateTo) p.set("date_to", fDateTo);
     const res = await fetch(`/api/leads?${p}`);
@@ -108,7 +152,7 @@ export default function LeadsPage() {
           <div style={{ display: "flex", gap: 8 }}>
             <button className="btn btn-secondary btn-sm" onClick={handleExport}><Download size={14} /> Export Excel</button>
             <button className="btn btn-secondary btn-sm" onClick={() => setShowImport(true)} style={{ display: "flex", alignItems: "center", gap: 6 }}><Upload size={14} /> Import Excel</button>
-            <button className="btn className=btn-primary" onClick={() => { setEditItem(null); setForm({ customer_id: "", customer_name: "", customer_phone: "", pic_id: "", lead_date: new Date().toISOString().split("T")[0], source: "WhatsApp", status: "Prospek", tags: "", notes: "" }); setShowModal(true); }}><Plus size={14} /> Tambah Lead</button>
+            <button className="btn btn-primary" onClick={() => { setEditItem(null); setForm({ customer_id: "", customer_name: "", customer_phone: "", pic_id: userRole === "CS / Sales" ? String(userId) : "", lead_date: new Date().toISOString().split("T")[0], source: "WhatsApp", status: "Prospek", tags: "", notes: "" }); setShowModal(true); }}><Plus size={14} /> Tambah Lead</button>
           </div>
         }
       />
@@ -116,7 +160,7 @@ export default function LeadsPage() {
       {/* Filters */}
       <div className="erp-card" style={{ marginBottom: 12, padding: "12px 16px" }}>
         <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
-          <input value={search} onChange={e => setSearch(e.target.value)} placeholder="🔍 Cari nama, tag, catatan..." style={{ width: 200 }} />
+          <input value={searchInput} onChange={e => setSearchInput(e.target.value)} placeholder="🔍 Cari nama, tag, catatan..." style={{ width: 200 }} />
           <SearchableSelect 
             value={fStatus} onChange={setFStatus} 
             options={[{ value: "", label: "Semua Status" }, ...STATUSES.map(s => ({ value: s, label: s }))]} 
@@ -127,14 +171,16 @@ export default function LeadsPage() {
             options={[{ value: "", label: "Semua Sumber" }, ...SOURCES.map(s => ({ value: s, label: s }))]} 
             style={{ width: 140 }} 
           />
-          <SearchableSelect 
-            value={fPic} onChange={setFPic} 
-            options={[{ value: "", label: "Semua CS" }, ...users.filter((u: any) => u.role === "CS / Sales").map((u: any) => ({ value: u.id, label: u.name }))]} 
-            style={{ width: 160 }} 
-          />
+          {userRole !== "CS / Sales" && (
+            <SearchableSelect 
+              value={fPic} onChange={setFPic} 
+              options={[{ value: "", label: "Semua CS" }, ...users.filter((u: any) => u.role === "CS / Sales").map((u: any) => ({ value: u.id, label: u.name }))]} 
+              style={{ width: 160 }} 
+            />
+          )}
           <input type="date" value={fDateFrom} onChange={e => setFDateFrom(e.target.value)} style={{ width: 140 }} title="Dari tanggal" />
           <input type="date" value={fDateTo} onChange={e => setFDateTo(e.target.value)} style={{ width: 140 }} title="Sampai tanggal" />
-          <button className="btn btn-secondary btn-sm" onClick={() => { setSearch(""); setFStatus(""); setFSource(""); setFPic(""); setFDateFrom(""); setFDateTo(""); }}>Reset</button>
+          <button className="btn btn-secondary btn-sm" onClick={() => { setSearchInput(""); setSearch(""); setFStatus(""); setFSource(""); setFPic(""); setFDateFrom(""); setFDateTo(""); }}>Reset</button>
         </div>
       </div>
 
@@ -234,16 +280,18 @@ export default function LeadsPage() {
               menuPortalTarget={typeof document !== "undefined" ? document.body : null}
             />
           </FormField>
-          <FormField label="CS PIC">
-            <SearchableSelect 
-              value={form.pic_id} onChange={v => setForm(f => ({ ...f, pic_id: v }))}
-              options={[
-                { value: "", label: "-- Pilih CS --" },
-                ...users.filter((u: any) => u.role === "CS / Sales").map((u: any) => ({ value: u.id, label: u.name }))
-              ]}
-              menuPortalTarget={typeof document !== "undefined" ? document.body : null}
-            />
-          </FormField>
+          {userRole !== "CS / Sales" && (
+            <FormField label="CS PIC">
+              <SearchableSelect 
+                value={form.pic_id} onChange={v => setForm(f => ({ ...f, pic_id: v }))}
+                options={[
+                  { value: "", label: "-- Pilih CS --" },
+                  ...users.filter((u: any) => u.role === "CS / Sales").map((u: any) => ({ value: u.id, label: u.name }))
+                ]}
+                menuPortalTarget={typeof document !== "undefined" ? document.body : null}
+              />
+            </FormField>
+          )}
         </FormRow>
 
         {form.customer_id === "new" && (

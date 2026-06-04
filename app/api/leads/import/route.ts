@@ -1,10 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
+import { getServerSession } from "next-auth/next";
+import { authOptions } from "@/lib/auth";
 import pool from "@/lib/db";
 
 const VALID_STATUSES = ["Prospek", "Follow Up", "Negosiasi", "Konfirmasi", "Closing", "Reject"];
 const VALID_SOURCES = ["WhatsApp", "Instagram", "Website", "Referral", "Walk-in"];
 
 export async function POST(req: NextRequest) {
+  const session = await getServerSession(authOptions);
+  const userRole = (session?.user as any)?.role;
+  const userId = (session?.user as any)?.id;
+
   const body = await req.json();
   const rows: any[] = body.rows;
 
@@ -19,6 +25,8 @@ export async function POST(req: NextRequest) {
 
   try {
     await client.query("BEGIN");
+
+    const finalPicId = userRole === "CS / Sales" ? userId : null;
 
     for (let i = 0; i < rows.length; i++) {
       const r = rows[i];
@@ -62,9 +70,9 @@ export async function POST(req: NextRequest) {
       const finalSource = VALID_SOURCES.includes(source) ? source : "WhatsApp";
 
       await client.query(
-        `INSERT INTO leads (customer_id, lead_date, source, status, tags, notes)
-         VALUES ($1, $2, $3, $4, $5, $6)`,
-        [customerId, leadDate, finalSource, finalStatus, tags || null, notes || null]
+        `INSERT INTO leads (customer_id, pic_id, lead_date, source, status, tags, notes)
+         VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+        [customerId, finalPicId, leadDate, finalSource, finalStatus, tags || null, notes || null]
       );
       inserted++;
     }
