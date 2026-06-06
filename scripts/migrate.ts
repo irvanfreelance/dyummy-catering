@@ -10,12 +10,18 @@ dotenv.config({ path: path.resolve(process.cwd(), ".env.local") });
 neonConfig.webSocketConstructor = ws;
 
 async function migrate() {
-  const pool = new Pool({ connectionString: process.env.DATABASE_URL });
+  const connectionString = process.env.DATABASE_URL || process.env.POSTGRES_URL;
+  if (!connectionString) {
+    console.error("❌ Error: DATABASE_URL or POSTGRES_URL is not defined in environment variables.");
+    process.exit(1);
+  }
+  
+  const pool = new Pool({ connectionString });
   const client = await pool.connect();
 
   const sqlPath = path.resolve(
     process.cwd(),
-    "refs/skema_seed_erp_catering_dengan_cost_control.sql"
+    "refs/dyummy2026.sql"
   );
   const sqlContent = fs.readFileSync(sqlPath, "utf8");
 
